@@ -1,0 +1,40 @@
+export const TIMETABLE = {
+  1: [ // MONDAY
+    { start:'8:00',  end:'9:00',  sub:'English Language',   meta:'Tech 1 — Computer Crafts · Room 7'         },
+    { start:'9:10',  end:'10:10', sub:'Mathematics',         meta:'Tech 2 — Electrical Installation · Room 3' },
+    { start:'10:20', end:'11:20', sub:'Basic Electricity',   meta:'Tech 1 — Electrical Installation · Lab A'  },
+    { start:'12:00', end:'1:00',  sub:'Physics',             meta:'Tech 3 — Electronic Works · Room 5'        },
+    { start:'1:30',  end:'2:30',  sub:'Technical Drawing',   meta:'Tech 2 — Draughtsmanship · Room 9'         },
+    { start:'2:40',  end:'3:30',  sub:'Economics',           meta:'Tech 1 — Bookkeeping · Room 12'            },
+  ],
+  2: [ // TUESDAY
+    { start:'8:00',  end:'9:00',  sub:'ICT',                 meta:'Tech 2 — Computer Crafts · Lab B'          },
+    { start:'9:10',  end:'10:10', sub:'AutoCAD',             meta:'Tech 3 — Draughtsmanship · Lab C'          },
+    { start:'10:20', end:'11:20', sub:'Chemistry',           meta:'Tech 2 — Refrigeration & A/C · Room 6'    },
+    { start:'12:00', end:'1:00',  sub:'Mathematics',         meta:'Tech 1 — Computer Crafts · Room 7'         },
+    { start:'1:30',  end:'2:30',  sub:'Basic Programming',   meta:'Tech 3 — Computer Crafts · Lab B'          },
+  ],
+  3: [ // WEDNESDAY
+    { start:'8:00',  end:'9:00',  sub:'English Language',   meta:'Tech 2 — Garment Making · Room 4'          },
+    { start:'9:10',  end:'10:10', sub:'Computer Hardware',   meta:'Tech 1 — Computer Crafts · Lab A'          },
+    { start:'10:20', end:'11:20', sub:'Physics',             meta:'Tech 2 — Electronic Works · Room 5'        },
+    { start:'12:00', end:'1:00',  sub:'Technical Drawing',   meta:'Tech 1 — Draughtsmanship · Room 9'         },
+    { start:'1:30',  end:'2:30',  sub:'Biology',             meta:'Tech 3 — Garment Making · Room 11'         },
+    { start:'2:40',  end:'3:30',  sub:'Intro to Computer',   meta:'Tech 2 — Computer Crafts · Lab B'          },
+  ],
+  4: [ // THURSDAY
+    { start:'8:00',  end:'9:00',  sub:'Mathematics',         meta:'Tech 3 — Electrical Installation · Room 3' },
+    { start:'9:10',  end:'10:10', sub:'Computer Electronics', meta:'Tech 2 — Computer Crafts · Lab A'         },
+    { start:'10:20', end:'11:20', sub:'English Language',    meta:'Tech 1 — Secretarial Duties · Room 8'      },
+    { start:'12:00', end:'1:00',  sub:'Economics',           meta:'Tech 2 — Bookkeeping · Room 12'            },
+    { start:'1:30',  end:'2:30',  sub:'Basic Electricity',   meta:'Tech 3 — Electronic Works · Lab A'         },
+  ],
+  5: [ // FRIDAY
+    { start:'8:00',  end:'9:00',  sub:'ICT',                 meta:'Tech 1 — Computer Crafts · Lab B'          },
+    { start:'9:10',  end:'10:10', sub:'Chemistry',           meta:'Tech 3 — Electrical Installation · Room 6' },
+    { start:'10:20', end:'11:20', sub:'Basic Programming',   meta:'Tech 2 — Computer Crafts · Lab B'          },
+    { start:'12:00', end:'1:00',  sub:'AutoCAD',             meta:'Tech 1 — Draughtsmanship · Lab C'          },
+    { start:'1:30',  end:'2:30',  sub:'Mathematics',         meta:'Tech 3 — Computer Crafts · Room 7'         },
+    { start:'2:40',  end:'3:30',  sub:'Physics',             meta:'Tech 2 — Refrigeration & A/C · Room 5'    },
+  ],
+}
