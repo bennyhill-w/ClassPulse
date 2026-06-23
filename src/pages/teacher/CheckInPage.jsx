@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FiMapPin, FiClock, FiUser, FiCreditCard } from "react-icons/fi";
 import { MdQrCodeScanner } from "react-icons/md";
 import useAuthStore from "../../store/authStore";
+import api from "../../services/api";
 import Toast from "../../components/ui/Toast";
 import {
   timeStr,
@@ -56,6 +57,8 @@ export default function CheckInPage() {
   const [date, setDate] = useState(shortDate());
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState("");
+  const [isLate, setIsLate] = useState(false);
+  const [lateMinutes, setLateMinutes] = useState(0);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [qrScanning, setQrScanning] = useState(false);
   const [toast, setToast] = useState(null);
@@ -77,19 +80,27 @@ export default function CheckInPage() {
     setGpsLoading(true);
     try {
       const pos = await getCurrentPosition();
-      // In production: verify isWithinSchool(pos.lat, pos.lng)
-      // For demo: always approve
-      await new Promise((r) => setTimeout(r, 1500));
-      const t = timeStr();
+
+      // Call real backend
+      const token = localStorage.getItem("classpulse_token");
+      const res = await api.post("/checkin", {
+        method: "gps",
+        lat: pos.lat,
+        lng: pos.lng,
+      });
+
+      const { checkInTime: t, isLate: late, lateMinutes: mins } = res.data.data;
+      sessionStorage.setItem("cp_checkin_time", t);
       setCheckInTime(t);
+      setIsLate(late);
+      setLateMinutes(mins);
       setCheckInMethod("GPS Location");
       setCheckedIn(true);
       setShowSuccess(true);
-    } catch {
-      setToast({
-        message: "Could not get location. Try again.",
-        type: "error",
-      });
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Check-in failed. Try again.";
+      setToast({ message, type: "error" });
     } finally {
       setGpsLoading(false);
     }
@@ -99,14 +110,29 @@ export default function CheckInPage() {
   async function handleQrCheckIn() {
     if (checkedIn) return;
     setQrScanning(true);
-    // Simulate QR scan animation
-    await new Promise((r) => setTimeout(r, 2500));
-    const t = timeStr();
-    setCheckInTime(t);
-    setCheckInMethod("QR Code Scan");
-    setCheckedIn(true);
-    setQrScanning(false);
-    setShowSuccess(true);
+    try {
+      await new Promise((r) => setTimeout(r, 2500)); // QR scan animation
+
+      const res = await api.post("/checkin", {
+        method: "qr",
+        qrToken: "GATE_QR_GTC_AGIDINGBI", // will be real token when QR scanner is added
+      });
+
+      const { checkInTime: t, isLate: late, lateMinutes: mins } = res.data.data;
+      sessionStorage.setItem("cp_checkin_time", t);
+      setCheckInTime(t);
+      setIsLate(late);
+      setLateMinutes(mins);
+      setCheckInMethod("QR Code Scan");
+      setCheckedIn(true);
+      setShowSuccess(true);
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Check-in failed. Try again.";
+      setToast({ message, type: "error" });
+    } finally {
+      setQrScanning(false);
+    }
   }
 
   // ── GO TO DASHBOARD ─────────────────────────────────────────────
@@ -151,12 +177,16 @@ export default function CheckInPage() {
               width: 88,
               height: 88,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #10B981, #059669)",
+              background: isLate
+                ? "linear-gradient(135deg, #EF4444, #DC2626)"
+                : "linear-gradient(135deg, #10B981, #059669)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 20px",
-              boxShadow: "0 8px 32px rgba(16,185,129,0.4)",
+              boxShadow: isLate
+                ? "0 8px 32px rgba(239,68,68,0.4)"
+                : "0 8px 32px rgba(16,185,129,0.4)",
             }}
           >
             <svg
@@ -178,15 +208,25 @@ export default function CheckInPage() {
           <div
             style={{
               display: "inline-block",
-              background: "rgba(16,185,129,0.2)",
-              border: "1px solid rgba(16,185,129,0.4)",
+              background: isLate
+                ? "rgba(239,68,68,0.2)"
+                : "rgba(16,185,129,0.2)",
+              border: isLate
+                ? "1px solid rgba(239,68,68,0.4)"
+                : "1px solid rgba(16,185,129,0.4)",
               borderRadius: 20,
               padding: "4px 14px",
               marginBottom: 16,
             }}
           >
-            <span style={{ fontSize: 12, color: "#6EE7B7", fontWeight: 700 }}>
-              ON TIME ✓
+            <span
+              style={{
+                fontSize: 12,
+                color: isLate ? "#FECACA" : "#6EE7B7",
+                fontWeight: 700,
+              }}
+            >
+              {isLate ? `LATE — ${lateMinutes} mins ⚠` : "ON TIME ✓"}
             </span>
           </div>
 
@@ -208,7 +248,11 @@ export default function CheckInPage() {
               margin: "0 0 24px",
             }}
           >
-            Welcome to G.T.C Agidingbi, {user?.lastName || "Teacher"}
+            {isLate
+              ? `You are ${lateMinutes} minute${
+                  lateMinutes !== 1 ? "s" : ""
+                } late. Please proceed to your class.`
+              : `Welcome to G.T.C Agidingbi, ${user?.lastName || "Teacher"}`}
           </p>
 
           {/* Info rows */}
@@ -270,14 +314,18 @@ export default function CheckInPage() {
               height: 56,
               borderRadius: 16,
               border: "none",
-              background: "linear-gradient(135deg, #10B981, #059669)",
+              background: isLate
+                ? "linear-gradient(135deg, #EF4444, #B91C1C)"
+                : "linear-gradient(135deg, #10B981, #059669)",
               color: "white",
               fontSize: 15,
               fontWeight: 700,
               cursor: "pointer",
               marginTop: 28,
               fontFamily: "DM Sans, sans-serif",
-              boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+              boxShadow: isLate
+                ? "0 4px 20px rgba(239,68,68,0.4)"
+                : "0 4px 20px rgba(16,185,129,0.4)",
               letterSpacing: "0.5px",
             }}
           >

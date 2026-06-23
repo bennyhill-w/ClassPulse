@@ -4,6 +4,7 @@ import { FiCreditCard, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import Toast from "../../components/ui/Toast";
 import useAuthStore from "../../store/authStore";
 import { isValidEmail } from "../../utils/helpers";
+import api from "../../services/api";
 
 function FormInput({
   label,
@@ -140,27 +141,25 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call
-      // const res = await api.post('/auth/teacher/login', form)
-      await new Promise((r) => setTimeout(r, 1200));
-
-      // Simulate successful login — mock user object
-      const mockUser = {
-        id: "ADM-001",
-        firstName: "Principal",
-        lastName: "Johnson",
-        title: "Dr.",
-        staffId: form.staffId,
-        email: "principal@gtc.edu.ng",
-        role: "admin",
-      };
-      login(mockUser, "mock_token_12345");
-      navigate("/admin/overview", { replace: true });
-    } catch {
-      setToast({
-        message: "Invalid Staff ID or password. Try again.",
-        type: "error",
+      const res = await api.post("/auth/login", {
+        identifier: form.staffId,
+        password: form.password,
       });
+
+      const { user, token } = res.data.data;
+
+      // Save to Zustand store and localStorage
+      login(user, token);
+
+      // Redirect based on role
+      if (user.role === "admin") {
+        navigate("/admin/overview", { replace: true });
+      } else {
+        navigate("/teacher/checkin", { replace: true });
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || "Login failed. Try again.";
+      setToast({ message, type: "error" });
     } finally {
       setLoading(false);
     }

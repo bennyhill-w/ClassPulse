@@ -1,68 +1,94 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FiBell, FiUser, FiMapPin, FiClock, FiPlay, FiCheck } from 'react-icons/fi'
-import useAuthStore from '../../store/authStore'
-import Toast from '../../components/ui/Toast'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  greeting, shortDate, timeStr, displayName,
-} from '../../utils/helpers'
-import { TIMETABLE } from '../../utils/timetable'
+  FiBell,
+  FiUser,
+  FiMapPin,
+  FiClock,
+  FiPlay,
+  FiCheck,
+} from "react-icons/fi";
+import useAuthStore from "../../store/authStore";
+import api from "../../services/api";
+import Toast from "../../components/ui/Toast";
+import { greeting, shortDate, timeStr, displayName } from "../../utils/helpers";
+import { TIMETABLE } from "../../utils/timetable";
 
 export default function HomePage() {
-  const navigate        = useNavigate()
-  const { user, logout } = useAuthStore()
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
-  const [time, setTime]           = useState(timeStr())
-  const [date, setDate]           = useState(shortDate())
-  const [toast, setToast]         = useState(null)
-  const [checkedOut, setCheckedOut] = useState(false)
-  const [checkOutTime, setCheckOutTime] = useState('')
-  const [showCheckout, setShowCheckout] = useState(false)
-  const [classStates, setClassStates]   = useState({})
+  const [time, setTime] = useState(timeStr());
+  const [date, setDate] = useState(shortDate());
+  const [toast, setToast] = useState(null);
+  const [checkedOut, setCheckedOut] = useState(false);
+  const [checkOutTime, setCheckOutTime] = useState("");
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [classStates, setClassStates] = useState({});
 
-  const checkInTime = sessionStorage.getItem('cp_checkin_time') || '8:00 AM'
+  const checkInTime = sessionStorage.getItem("cp_checkin_time") || "8:00 AM";
 
   // Live clock
   useEffect(() => {
-    const t = setInterval(() => { setTime(timeStr()); setDate(shortDate()) }, 1000)
-    return () => clearInterval(t)
-  }, [])
+    const t = setInterval(() => {
+      setTime(timeStr());
+      setDate(shortDate());
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // Today's classes
-  const todayDow    = new Date().getDay()
-  const targetDow   = (todayDow === 0 || todayDow === 6) ? 1 : todayDow
-  const todayClasses = TIMETABLE[targetDow] || []
+  const todayDow = new Date().getDay();
+  const targetDow = todayDow === 0 || todayDow === 6 ? 1 : todayDow;
+  const todayClasses = TIMETABLE[targetDow] || [];
 
   // Start / End class
   function toggleClass(idx) {
-    setClassStates(prev => {
-      const current = prev[idx] || 'idle'
-      if (current === 'idle')    return { ...prev, [idx]: 'active' }
-      if (current === 'active')  return { ...prev, [idx]: 'done'   }
-      return prev
-    })
-    const cls = todayClasses[idx]
-    if ((classStates[idx] || 'idle') === 'idle') {
-      setToast({ message: `✅ ${cls.sub} started! Admin notified.`, type: 'success' })
-    } else if (classStates[idx] === 'active') {
-      setToast({ message: `Class ended and recorded.`, type: 'success' })
+    setClassStates((prev) => {
+      const current = prev[idx] || "idle";
+      if (current === "idle") return { ...prev, [idx]: "active" };
+      if (current === "active") return { ...prev, [idx]: "done" };
+      return prev;
+    });
+    const cls = todayClasses[idx];
+    if ((classStates[idx] || "idle") === "idle") {
+      setToast({
+        message: `✅ ${cls.sub} started! Admin notified.`,
+        type: "success",
+      });
+    } else if (classStates[idx] === "active") {
+      setToast({ message: `Class ended and recorded.`, type: "success" });
     }
   }
 
   // Checkout
-  function confirmCheckOut() {
-    const t = timeStr()
-    setCheckOutTime(t)
-    setCheckedOut(true)
-    setShowCheckout(false)
-    setToast({ message: '✅ Checked out. See you tomorrow!', type: 'success' })
+  async function confirmCheckOut() {
+    try {
+      const res = await api.post("/checkin/checkout");
+      const t = res.data.data.checkOutTime;
+      setCheckOutTime(t);
+      setCheckedOut(true);
+      setShowCheckout(false);
+      setToast({
+        message: "✅ Checked out. See you tomorrow!",
+        type: "success",
+      });
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Checkout failed. Try again.";
+      setToast({ message, type: "error" });
+      setShowCheckout(false);
+    }
   }
 
-  const name     = displayName(user) || 'Teacher'
-  const initials = `${(user?.firstName||'T')[0]}${(user?.lastName||'C')[0]}`.toUpperCase()
+  const name = displayName(user) || "Teacher";
+  const initials =
+    `${(user?.firstName || "T")[0]}${(user?.lastName || "C")[0]}`.toUpperCase();
 
-  const classCount = todayClasses.length
-  const doneCount  = Object.values(classStates).filter(s => s === 'done').length
+  const classCount = todayClasses.length;
+  const doneCount = Object.values(classStates).filter(
+    (s) => s === "done",
+  ).length;
 
   return (
     <div
