@@ -43,21 +43,58 @@ export default function HomePage() {
   const todayClasses = TIMETABLE[targetDow] || [];
 
   // Start / End class
-  function toggleClass(idx) {
-    setClassStates((prev) => {
-      const current = prev[idx] || "idle";
-      if (current === "idle") return { ...prev, [idx]: "active" };
-      if (current === "active") return { ...prev, [idx]: "done" };
-      return prev;
-    });
+  async function toggleClass(idx) {
     const cls = todayClasses[idx];
-    if ((classStates[idx] || "idle") === "idle") {
-      setToast({
-        message: `✅ ${cls.sub} started! Admin notified.`,
-        type: "success",
-      });
-    } else if (classStates[idx] === "active") {
-      setToast({ message: `Class ended and recorded.`, type: "success" });
+    const state = classStates[idx] || "idle";
+
+    if (state === "done") return;
+
+    if (state === "idle") {
+      // START CLASS
+      try {
+        const res = await api.post("/teacher/class/start", {
+          subject: cls.sub,
+          trade: cls.meta.split("—")[1]?.split("·")[0]?.trim() || "General",
+          classYear: cls.meta.split("—")[0]?.trim() || "Tech 1",
+          room: cls.meta.split("·")[1]?.trim() || cls.meta,
+        });
+        const sessionId = res.data.data.session.id;
+        setClassStates((prev) => ({ ...prev, [idx]: "active" }));
+        // Store session ID so we can end it later
+        setClassStates((prev) => ({
+          ...prev,
+          [`${idx}_sessionId`]: sessionId,
+        }));
+        setToast({
+          message: `✅ ${cls.sub} started! Admin notified.`,
+          type: "success",
+        });
+      } catch (err) {
+        const message = err.response?.data?.message || "Failed to start class";
+        setToast({ message, type: "error" });
+      }
+    } else if (state === "active") {
+      // END CLASS
+      const sessionId = classStates[`${idx}_sessionId`];
+      if (!sessionId) {
+        setToast({
+          message: "Session ID not found. Try again.",
+          type: "error",
+        });
+        return;
+      }
+      try {
+        const res = await api.post("/teacher/class/end", { sessionId });
+        const { durationMins } = res.data.data;
+        setClassStates((prev) => ({ ...prev, [idx]: "done" }));
+        setToast({
+          message: `Class ended — ${durationMins} minute${durationMins !== 1 ? "s" : ""}`,
+          type: "success",
+        });
+      } catch (err) {
+        const message = err.response?.data?.message || "Failed to end class";
+        setToast({ message, type: "error" });
+      }
     }
   }
 
