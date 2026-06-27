@@ -1,156 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiSearch, FiEye, FiMail, FiEdit2, FiX, FiSend } from "react-icons/fi";
 import { MdPersonAdd } from "react-icons/md";
-
-const TEACHERS = [
-  {
-    init: "JA",
-    color: "#2563EB",
-    name: "Mr. John Adeola",
-    id: "TCH-001",
-    trade: "Computer Crafts",
-    subjects: "ICT, Basic Programming",
-    status: "On Time",
-    scolor: "#10B981",
-    sbg: "#ECFDF5",
-    activity: "2/4 done",
-    rate: 93,
-    email: "j.adeola@gtc.edu.ng",
-    phone: "080-1234-5678",
-    joined: "Jan 2019",
-  },
-  {
-    init: "CN",
-    color: "#7C3AED",
-    name: "Mrs. Chioma Nwankwo",
-    id: "TCH-002",
-    trade: "General Subjects",
-    subjects: "English Language",
-    status: "On Time",
-    scolor: "#10B981",
-    sbg: "#ECFDF5",
-    activity: "1/3 done",
-    rate: 97,
-    email: "c.nwankwo@gtc.edu.ng",
-    phone: "080-2345-6789",
-    joined: "Mar 2017",
-  },
-  {
-    init: "EO",
-    color: "#059669",
-    name: "Mr. Emeka Okafor",
-    id: "TCH-003",
-    trade: "Electronic Works",
-    subjects: "Physics, Basic Electricity",
-    status: "Late",
-    scolor: "#F59E0B",
-    sbg: "#FEF3C7",
-    activity: "Active",
-    rate: 78,
-    email: "e.okafor@gtc.edu.ng",
-    phone: "080-3456-7890",
-    joined: "Sep 2020",
-  },
-  {
-    init: "BT",
-    color: "#D97706",
-    name: "Mrs. Bola Taiwo",
-    id: "TCH-004",
-    trade: "Garment Making",
-    subjects: "Chemistry, Biology",
-    status: "Absent",
-    scolor: "#EF4444",
-    sbg: "#FEF2F2",
-    activity: "—",
-    rate: 65,
-    email: "b.taiwo@gtc.edu.ng",
-    phone: "080-4567-8901",
-    joined: "Jun 2018",
-  },
-  {
-    init: "KA",
-    color: "#DC2626",
-    name: "Mr. Kunle Adeyemi",
-    id: "TCH-005",
-    trade: "Electrical Installation",
-    subjects: "Mathematics, Economics",
-    status: "On Time",
-    scolor: "#10B981",
-    sbg: "#ECFDF5",
-    activity: "1/2 done",
-    rate: 90,
-    email: "k.adeyemi@gtc.edu.ng",
-    phone: "080-5678-9012",
-    joined: "Feb 2016",
-  },
-  {
-    init: "FA",
-    color: "#0284C7",
-    name: "Mrs. Funke Adeyemi",
-    id: "TCH-006",
-    trade: "Bookkeeping",
-    subjects: "Economics, Commerce",
-    status: "On Time",
-    scolor: "#10B981",
-    sbg: "#ECFDF5",
-    activity: "1/2 done",
-    rate: 88,
-    email: "f.adeyemi@gtc.edu.ng",
-    phone: "080-6789-0123",
-    joined: "Apr 2021",
-  },
-  {
-    init: "OA",
-    color: "#059669",
-    name: "Mr. Ola Adesanya",
-    id: "TCH-007",
-    trade: "General Subjects",
-    subjects: "English Language, Literature",
-    status: "On Time",
-    scolor: "#10B981",
-    sbg: "#ECFDF5",
-    activity: "2/3 done",
-    rate: 91,
-    email: "o.adesanya@gtc.edu.ng",
-    phone: "080-7890-1234",
-    joined: "Aug 2015",
-  },
-  {
-    init: "TR",
-    color: "#7C3AED",
-    name: "Mr. Tunde Rahman",
-    id: "TCH-008",
-    trade: "Computer Crafts",
-    subjects: "Computer Hardware, Electronics",
-    status: "Late",
-    scolor: "#F59E0B",
-    sbg: "#FEF3C7",
-    activity: "Active",
-    rate: 71,
-    email: "t.rahman@gtc.edu.ng",
-    phone: "080-8901-2345",
-    joined: "Nov 2022",
-  },
-  {
-    init: "AB",
-    color: "#0284C7",
-    name: "Mr. Adewale Balogun",
-    id: "TCH-009",
-    trade: "Draughtsmanship",
-    subjects: "Technical Drawing, AutoCAD",
-    status: "On Time",
-    scolor: "#10B981",
-    sbg: "#ECFDF5",
-    activity: "1/3 done",
-    rate: 85,
-    email: "a.balogun@gtc.edu.ng",
-    phone: "080-9012-3456",
-    joined: "May 2019",
-  },
-];
+import api from "../../services/api";
 
 const FILTERS = ["All", "Present", "Late", "Absent"];
-const PER_PAGE = 5;
 
 export default function TeachersPage() {
   const [search, setSearch] = useState("");
@@ -161,60 +14,98 @@ export default function TeachersPage() {
   const [editTeacher, setEdit] = useState(null);
   const [message, setMessage] = useState("");
   const [msgSent, setMsgSent] = useState(false);
-  const [teachers, setTeachers] = useState(TEACHERS);
   const [editForm, setEditForm] = useState({});
+  const [teachers, setTeachers] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState("");
 
-  // Filter + search
-  const filtered = teachers.filter((t) => {
-    const matchSearch =
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.id.toLowerCase().includes(search.toLowerCase()) ||
-      t.trade.toLowerCase().includes(search.toLowerCase());
-    const matchFilter =
-      filter === "All"
-        ? true
-        : filter === "Present"
-          ? t.status === "On Time"
-          : filter === "Late"
-            ? t.status === "Late"
-            : t.status === "Absent";
-    return matchSearch && matchFilter;
+  useEffect(() => {
+    async function loadTeachers() {
+      try {
+        setLoading(true);
+        const statusParam =
+          filter === "All" ? "" : `&status=${filter.toLowerCase()}`;
+        const searchParam = search ? `&search=${search}` : "";
+        const res = await api.get(
+          `/admin/teachers?page=${page}&limit=10${statusParam}${searchParam}`,
+        );
+        setTeachers(res.data.data.teachers);
+        setPagination(res.data.data.pagination);
+      } catch (err) {
+        console.error("Teachers load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTeachers();
+  }, [filter, search, page]);
+
+  // Transform API response to component format
+  const displayTeachers = teachers.map((t) => {
+    const colors = [
+      { color: "#2563EB", text: "#0F172A" },
+      { color: "#7C3AED", text: "#0F172A" },
+      { color: "#059669", text: "white" },
+      { color: "#DC2626", text: "white" },
+      { color: "#0284C7", text: "white" },
+      { color: "#D97706", text: "white" },
+    ];
+    const colorIndex = (t.staffId?.charCodeAt(0) || 0) % colors.length;
+    const bg = colors[colorIndex];
+
+    const statusConfig = {
+      "On Time": { color: "#10B981", bg: "#ECFDF5" },
+      Late: { color: "#F59E0B", bg: "#FEF3C7" },
+      Absent: { color: "#EF4444", bg: "#FEF2F2" },
+    };
+    const status = statusConfig[t.todayStatus] || statusConfig.Absent;
+
+    return {
+      ...t,
+      id: t.staffId,
+      name: `${t.title || ""} ${t.firstName} ${t.lastName}`.trim(),
+      init: t.initials,
+      color: bg.color,
+      status: t.todayStatus,
+      scolor: status.color,
+      sbg: status.bg,
+      activity: t.activityToday,
+      rate: t.attendanceRate,
+    };
   });
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  function sendMessage() {
+  async function sendMessage() {
     if (!message.trim()) return;
-    // Push to teacher notifications via localStorage
     try {
-      const notifs = JSON.parse(
-        localStorage.getItem("klacify_teacher_notifs") || "[]",
-      );
-      notifs.unshift({
-        message: `📧 Message from Principal: ${message}`,
-        type: "default",
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-        }),
+      await api.post("/admin/message", {
+        recipientId: msgTeacher.id,
+        body: message,
       });
-      localStorage.setItem("klacify_teacher_notifs", JSON.stringify(notifs));
-    } catch {}
-    setMsgSent(true);
-    setTimeout(() => {
-      setMsg(null);
-      setMessage("");
-      setMsgSent(false);
-    }, 1500);
+      setMsgSent(true);
+      setTimeout(() => {
+        setMsg(null);
+        setMessage("");
+        setMsgSent(false);
+      }, 1500);
+    } catch (err) {
+      console.error("Send message error:", err);
+    }
   }
 
-  function saveEdit() {
-    setTeachers((prev) =>
-      prev.map((t) => (t.id === editTeacher.id ? { ...t, ...editForm } : t)),
-    );
-    setEdit(null);
-    setEditForm({});
+  async function saveEdit() {
+    try {
+      await api.patch(`/admin/teachers/${editTeacher.id}`, editForm);
+      setTeachers((prev) =>
+        prev.map((t) => (t.id === editTeacher.id ? { ...t, ...editForm } : t)),
+      );
+      setEdit(null);
+      setEditForm({});
+      setToast("✅ Teacher updated successfully");
+      setTimeout(() => setToast(""), 2500);
+    } catch (err) {
+      console.error("Edit teacher error:", err);
+    }
   }
 
   const inp = {
@@ -373,7 +264,7 @@ export default function TeachersPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {displayTeachers.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -388,7 +279,7 @@ export default function TeachersPage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((t, i) => (
+                displayTeachers.map((t, i) => (
                   <tr key={t.id} style={{ borderTop: "1px solid #F1F5F9" }}>
                     <td style={{ padding: "14px 20px" }}>
                       <div
@@ -595,8 +486,8 @@ export default function TeachersPage() {
           }}
         >
           <span style={{ fontSize: 13, color: "#94A3B8" }}>
-            Showing {Math.min((page - 1) * PER_PAGE + 1, filtered.length)}–
-            {Math.min(page * PER_PAGE, filtered.length)} of {filtered.length}{" "}
+            Showing {Math.min((page - 1) * 10 + 1, pagination.total)}–
+            {Math.min(page * 10, pagination.total)} of {pagination.total}{" "}
             teachers
           </span>
           <div style={{ display: "flex", gap: 4 }}>
@@ -617,37 +508,42 @@ export default function TeachersPage() {
             >
               ‹
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  border: "none",
-                  background: page === p ? "#2563EB" : "white",
-                  color: page === p ? "white" : "#64748B",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  border: page === p ? "none" : "1px solid #E2E8F0",
-                }}
-              >
-                {p}
-              </button>
-            ))}
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+              (p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    border: "none",
+                    background: page === p ? "#2563EB" : "white",
+                    color: page === p ? "white" : "#64748B",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: page === p ? "none" : "1px solid #E2E8F0",
+                  }}
+                >
+                  {p}
+                </button>
+              ),
+            )}
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              disabled={page === pagination.totalPages}
               style={{
                 width: 32,
                 height: 32,
                 borderRadius: 8,
                 border: "1px solid #E2E8F0",
                 background: "white",
-                cursor: page === totalPages ? "not-allowed" : "pointer",
-                opacity: page === totalPages ? 0.4 : 1,
+                cursor:
+                  page === pagination.totalPages ? "not-allowed" : "pointer",
+                opacity: page === pagination.totalPages ? 0.4 : 1,
                 fontFamily: "DM Sans, sans-serif",
                 fontSize: 13,
               }}

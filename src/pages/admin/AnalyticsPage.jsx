@@ -1,82 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../services/api";
 import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
 
-const PERIODS = ["Weekly", "Monthly", "Term"];
-
-const DATA = {
-  Weekly: {
-    avgCheckin: "7:54 AM",
-    punctuality: "87%",
-    avgClasses: "12.4",
-    absenceRate: "8%",
-    trend: "+4%",
-  },
-  Monthly: {
-    avgCheckin: "7:58 AM",
-    punctuality: "83%",
-    avgClasses: "11.8",
-    absenceRate: "10%",
-    trend: "+2%",
-  },
-  Term: {
-    avgCheckin: "8:02 AM",
-    punctuality: "79%",
-    avgClasses: "11.2",
-    absenceRate: "13%",
-    trend: "-1%",
-  },
-};
-
-const WEEKLY_CHECKINS = [
-  { day: "Mon", count: 28, total: 31 },
-  { day: "Tue", count: 29, total: 31 },
-  { day: "Wed", count: 31, total: 31 },
-  { day: "Thu", count: 27, total: 31 },
-  { day: "Fri", count: 25, total: 31 },
-];
-
-const TOP_TEACHERS = [
-  {
-    init: "CN",
-    color: "#7C3AED",
-    name: "Mrs. Chioma Nwankwo",
-    rate: 97,
-    streak: "22 days on time",
-  },
-  {
-    init: "OA",
-    color: "#059669",
-    name: "Mr. Ola Adesanya",
-    rate: 95,
-    streak: "18 days on time",
-  },
-  {
-    init: "KA",
-    color: "#DC2626",
-    name: "Mr. Kunle Adeyemi",
-    rate: 90,
-    streak: "15 days on time",
-  },
-  {
-    init: "FA",
-    color: "#0284C7",
-    name: "Mrs. Funke Adeyemi",
-    rate: 88,
-    streak: "12 days on time",
-  },
-  {
-    init: "AB",
-    color: "#0284C7",
-    name: "Mr. Adewale Balogun",
-    rate: 85,
-    streak: "10 days on time",
-  },
-];
+const PERIODS = ["weekly", "monthly", "term"];
 
 export default function AnalyticsPage() {
-  const [period, setPeriod] = useState("Weekly");
-  const d = DATA[period];
-  const isUp = d.trend.startsWith("+");
+  const [period, setPeriod] = useState("weekly");
+  const [data, setData] = useState({
+    avgCheckinTime: "—",
+    punctualityRate: "—",
+    avgClassesPerDay: "—",
+    absenceRate: "—",
+    trend: "+0%",
+    dailyCheckins: [],
+  });
+  const [topTeachers, setTopTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAnalytics() {
+      try {
+        setLoading(true);
+        const res = await api.get(`/admin/analytics?period=${period}`);
+        setData(res.data.data);
+        setTopTeachers(res.data.data.topTeachers || []);
+      } catch (err) {
+        console.error("Analytics error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAnalytics();
+  }, [period]);
+
+  const isUp = (data.trend || "+0%").startsWith("+");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -139,25 +96,25 @@ export default function AnalyticsPage() {
         {[
           {
             label: "Avg Check-in Time",
-            value: d.avgCheckin,
+            value: data.avgCheckinTime,
             color: "#2563EB",
             bg: "#EFF6FF",
           },
           {
             label: "Punctuality Rate",
-            value: d.punctuality,
+            value: data.punctualityRate,
             color: "#10B981",
             bg: "#ECFDF5",
           },
           {
             label: "Avg Classes / Day",
-            value: d.avgClasses,
+            value: data.avgClassesPerDay,
             color: "#F59E0B",
             bg: "#FEF3C7",
           },
           {
             label: "Absence Rate",
-            value: d.absenceRate,
+            value: data.absenceRate,
             color: "#EF4444",
             bg: "#FEF2F2",
           },
@@ -221,8 +178,8 @@ export default function AnalyticsPage() {
               height: 140,
             }}
           >
-            {WEEKLY_CHECKINS.map((d) => {
-              const pct = (d.count / d.total) * 100;
+            {(data.dailyCheckins || []).map((d) => {
+              const pct = d.total > 0 ? (d.count / d.total) * 100 : 0;
               const barH = (pct / 100) * 120;
               return (
                 <div
@@ -320,7 +277,7 @@ export default function AnalyticsPage() {
                 color: "white",
               }}
             >
-              {d.trend}
+              {data.trend}
             </span>
           </div>
           <p
@@ -344,8 +301,8 @@ export default function AnalyticsPage() {
                 margin: 0,
               }}
             >
-              Current: <strong>{d.punctuality}</strong> punctuality rate across
-              31 teaching staff
+              Current: <strong>{data.punctualityRate}</strong> punctuality rate
+              across {data.dailyCheckins?.[0]?.total || 0} teaching staff
             </p>
           </div>
         </div>
@@ -376,7 +333,7 @@ export default function AnalyticsPage() {
             🏆 Top Performers This {period}
           </h3>
         </div>
-        {TOP_TEACHERS.map((t, i) => (
+        {topTeachers.map((t, i) => (
           <div
             key={i}
             style={{

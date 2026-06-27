@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../services/api";
 import { FiX, FiMail } from "react-icons/fi";
 import {
   MdWarning,
@@ -61,40 +62,55 @@ const STYLE = {
 };
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState(INITIAL_ALERTS);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [msgId, setMsgId] = useState(null);
   const [msg, setMsg] = useState("");
   const [sent, setSent] = useState(false);
   const [toast, setToast] = useState("");
 
-  function dismiss(id) {
-    setAlerts((p) => p.filter((a) => a.id !== id));
-    setToast("✅ Alert dismissed");
-    setTimeout(() => setToast(""), 2500);
+  useEffect(() => {
+    async function loadAlerts() {
+      try {
+        const res = await api.get("/admin/alerts");
+        setAlerts(res.data.data.alerts);
+      } catch (err) {
+        console.error("Alerts error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAlerts();
+  }, []);
+
+  async function dismiss(id) {
+    try {
+      await api.patch(`/admin/alerts/${id}/resolve`);
+      setAlerts((p) => p.filter((a) => a.id !== id));
+      setToast("✅ Alert dismissed");
+      setTimeout(() => setToast(""), 2500);
+    } catch (err) {
+      console.error("Dismiss error:", err);
+    }
   }
 
-  function sendMsg() {
+  async function sendMsg() {
     if (!msg.trim()) return;
-    setSent(true);
+    const alert = alerts.find((a) => a.id === msgId);
     try {
-      const notifs = JSON.parse(
-        localStorage.getItem("klacify_teacher_notifs") || "[]",
-      );
-      notifs.unshift({
-        message: `📧 Admin: ${msg}`,
-        type: "default",
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-        }),
+      await api.post("/admin/message", {
+        recipientId: alert?.teacherId,
+        body: msg,
       });
-      localStorage.setItem("klacify_teacher_notifs", JSON.stringify(notifs));
-    } catch {}
-    setTimeout(() => {
-      setMsgId(null);
-      setMsg("");
-      setSent(false);
-    }, 1500);
+      setSent(true);
+      setTimeout(() => {
+        setMsgId(null);
+        setMsg("");
+        setSent(false);
+      }, 1500);
+    } catch (err) {
+      console.error("Send msg error:", err);
+    }
   }
 
   const inp = {

@@ -1,129 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiEye, FiX, FiClock } from "react-icons/fi";
 import { MdClass, MdCheckCircle, MdSchedule, MdCancel } from "react-icons/md";
-
-const CLASSES = [
-  {
-    sub: "English Language",
-    teacher: "Mr. John Adeola",
-    id: "TCH-001",
-    meta: "Tech 2 — Computer Crafts",
-    room: "Room 14",
-    time: "9:00–10:00",
-    status: "active",
-    elapsed: "0:42",
-    color: "#2563EB",
-    init: "JA",
-  },
-  {
-    sub: "ICT",
-    teacher: "Mrs. Chioma Nwankwo",
-    id: "TCH-002",
-    meta: "Tech 1 — Computer Crafts",
-    room: "Lab B",
-    time: "9:30–10:30",
-    status: "active",
-    elapsed: "0:28",
-    color: "#7C3AED",
-    init: "CN",
-  },
-  {
-    sub: "Physics",
-    teacher: "Mr. Emeka Okafor",
-    id: "TCH-003",
-    meta: "Tech 3 — Electronic Works",
-    room: "Lab A",
-    time: "9:45–10:45",
-    status: "active",
-    elapsed: "0:15",
-    color: "#059669",
-    init: "EO",
-  },
-  {
-    sub: "Chemistry",
-    teacher: "Mr. Kunle Adeyemi",
-    id: "TCH-005",
-    meta: "Tech 2 — Electrical Installation",
-    room: "Room 20",
-    time: "9:00–10:00",
-    status: "active",
-    elapsed: "0:55",
-    color: "#DC2626",
-    init: "KA",
-  },
-  {
-    sub: "Basic Programming",
-    teacher: "Mr. John Adeola",
-    id: "TCH-001",
-    meta: "Tech 3 — Computer Crafts",
-    room: "Lab B",
-    time: "1:00–2:00",
-    status: "upcoming",
-    elapsed: "—",
-    color: "#2563EB",
-    init: "JA",
-  },
-  {
-    sub: "Economics",
-    teacher: "Mrs. Funke Adeyemi",
-    id: "TCH-006",
-    meta: "Tech 1 — Bookkeeping",
-    room: "Room 11",
-    time: "10:30–11:30",
-    status: "upcoming",
-    elapsed: "—",
-    color: "#0284C7",
-    init: "FA",
-  },
-  {
-    sub: "AutoCAD",
-    teacher: "Mr. Adewale Balogun",
-    id: "TCH-009",
-    meta: "Tech 2 — Draughtsmanship",
-    room: "Lab C",
-    time: "10:00–11:00",
-    status: "upcoming",
-    elapsed: "—",
-    color: "#0284C7",
-    init: "AB",
-  },
-  {
-    sub: "Technical Drawing",
-    teacher: "—",
-    id: "—",
-    meta: "Tech 2 — Draughtsmanship",
-    room: "Room 9",
-    time: "11:00–12:00",
-    status: "absent",
-    elapsed: "—",
-    color: "#94A3B8",
-    init: "?",
-  },
-  {
-    sub: "Mathematics",
-    teacher: "Mr. Kunle Adeyemi",
-    id: "TCH-005",
-    meta: "Tech 1 — Electrical Installation",
-    room: "Room 3",
-    time: "8:00–9:00",
-    status: "done",
-    elapsed: "60min",
-    color: "#DC2626",
-    init: "KA",
-  },
-  {
-    sub: "Biology",
-    teacher: "Mrs. Bola Taiwo",
-    id: "TCH-004",
-    meta: "Tech 3 — Garment Making",
-    room: "Room 11",
-    time: "8:00–9:00",
-    status: "done",
-    elapsed: "58min",
-    color: "#D97706",
-    init: "BT",
-  },
-];
+import api from "../../services/api";
 
 const STATUS_CONFIG = {
   active: { label: "Active", color: "#10B981", bg: "#ECFDF5", dot: true },
@@ -135,14 +13,58 @@ const STATUS_CONFIG = {
 export default function ActiveClassesPage() {
   const [filter, setFilter] = useState("all");
   const [detail, setDetail] = useState(null);
+  const [classes, setClasses] = useState([]);
+  const [counts, setCounts] = useState({
+    active: 0,
+    upcoming: 0,
+    done: 0,
+    absent: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const activeCount = CLASSES.filter((c) => c.status === "active").length;
-  const upcomingCount = CLASSES.filter((c) => c.status === "upcoming").length;
-  const doneCount = CLASSES.filter((c) => c.status === "done").length;
-  const absentCount = CLASSES.filter((c) => c.status === "absent").length;
+  useEffect(() => {
+    async function loadClasses() {
+      try {
+        const res = await api.get("/admin/classes");
+        setClasses(res.data.data.classes);
+        setCounts(res.data.data.counts);
+      } catch (err) {
+        console.error("Classes load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadClasses();
+    const interval = setInterval(loadClasses, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filtered =
-    filter === "all" ? CLASSES : CLASSES.filter((c) => c.status === filter);
+    filter === "all" ? classes : classes.filter((c) => c.status === filter);
+
+  const displayClasses = filtered.map((cls) => ({
+    ...cls,
+    sub: cls.subject,
+    init: cls.initials,
+    meta: `${cls.classYear || ""} — ${cls.trade || ""}`.trim(),
+    time:
+      cls.startedAt && cls.endedAt
+        ? `${new Date(cls.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}–${new Date(cls.endedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
+        : cls.startedAt
+          ? new Date(cls.startedAt).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : "—",
+    elapsed: cls.elapsedMins
+      ? cls.elapsedMins >= 60
+        ? `${Math.floor(cls.elapsedMins / 60)}h ${cls.elapsedMins % 60}m`
+        : `0:${String(cls.elapsedMins).padStart(2, "0")}`
+      : "—",
+    color: ["#2563EB", "#7C3AED", "#059669", "#DC2626", "#0284C7"][
+      Math.floor(Math.random() * 5)
+    ],
+  }));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -157,28 +79,28 @@ export default function ActiveClassesPage() {
         {[
           {
             icon: MdClass,
-            val: activeCount,
+            val: counts.active,
             label: "Active Now",
             color: "#10B981",
             bg: "#ECFDF5",
           },
           {
             icon: MdSchedule,
-            val: upcomingCount,
+            val: counts.upcoming,
             label: "Upcoming",
             color: "#2563EB",
             bg: "#EFF6FF",
           },
           {
             icon: MdCheckCircle,
-            val: doneCount,
+            val: counts.done,
             label: "Completed",
             color: "#94A3B8",
             bg: "#F1F5F9",
           },
           {
             icon: MdCancel,
-            val: absentCount,
+            val: counts.absent,
             label: "No Teacher",
             color: "#EF4444",
             bg: "#FEF2F2",
@@ -295,7 +217,7 @@ export default function ActiveClassesPage() {
                 margin: 0,
               }}
             >
-              All Classes Today — {filtered.length} total
+              All Classes Today — {classes.length} total
             </h3>
           </div>
           {filter === "active" && (
@@ -348,7 +270,7 @@ export default function ActiveClassesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((cls, i) => {
+              {displayClasses.map((cls, i) => {
                 const cfg = STATUS_CONFIG[cls.status];
                 return (
                   <tr key={i} style={{ borderTop: "1px solid #F1F5F9" }}>
