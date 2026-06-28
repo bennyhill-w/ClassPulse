@@ -61,6 +61,15 @@ const STYLE = {
   warn: { border: "#FDE68A", bg: "#FFFBF0", icon: "#F59E0B" },
 };
 
+// Map alert type to icon
+function getAlertIcon(type) {
+  const iconMap = {
+    danger: MdPersonOff,
+    warn: MdAccessTime,
+  };
+  return iconMap[type] || MdNotifications;
+}
+
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -203,7 +212,7 @@ export default function AlertsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {alerts.map((alert) => {
             const st = STYLE[alert.type];
-            const Icon = alert.icon;
+            const Icon = getAlertIcon(alert.type);
             return (
               <div
                 key={alert.id}
@@ -251,7 +260,7 @@ export default function AlertsPage() {
                       lineHeight: 1.5,
                     }}
                   >
-                    {alert.desc}
+                    {alert.description}
                   </p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button
@@ -273,7 +282,7 @@ export default function AlertsPage() {
                     >
                       <FiX size={12} /> Dismiss
                     </button>
-                    {alert.teacher && (
+                    {alert.teacherId && (
                       <button
                         onClick={() => {
                           setMsgId(alert.id);
