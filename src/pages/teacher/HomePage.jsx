@@ -12,7 +12,6 @@ import useAuthStore from "../../store/authStore";
 import api from "../../services/api";
 import Toast from "../../components/ui/Toast";
 import { greeting, shortDate, timeStr, displayName } from "../../utils/helpers";
-import { TIMETABLE } from "../../utils/timetable";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -25,6 +24,8 @@ export default function HomePage() {
   const [checkOutTime, setCheckOutTime] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
   const [classStates, setClassStates] = useState({});
+  const [todayClasses, setTodayClasses] = useState([]);
+  const [recentHistory, setRecentHistory] = useState([]);
 
   const checkInTime = sessionStorage.getItem("cp_checkin_time") || "8:00 AM";
 
@@ -37,10 +38,48 @@ export default function HomePage() {
     return () => clearInterval(t);
   }, []);
 
-  // Today's classes
-  const todayDow = new Date().getDay();
-  const targetDow = todayDow === 0 || todayDow === 6 ? 1 : todayDow;
-  const todayClasses = TIMETABLE[targetDow] || [];
+  useEffect(() => {
+    async function loadTodayData() {
+      try {
+        const timetableRes = await api.get("/teacher/timetable");
+        const timetable = timetableRes.data.data.timetable;
+        const todayDow = new Date().getDay();
+        const targetDow = todayDow === 0 || todayDow === 6 ? 1 : todayDow;
+        const todayEntries = timetable[targetDow] || [];
+
+        setTodayClasses(
+          todayEntries.map((entry) => ({
+            id: entry.id,
+            start: entry.startTime,
+            end: entry.endTime,
+            sub: entry.subject,
+            meta: `${entry.classYear} — ${entry.trade} · ${entry.room}`,
+          })),
+        );
+
+        const historyRes = await api.get("/teacher/class/history?filter=week");
+        const sessions = historyRes.data.data.sessions || [];
+        setRecentHistory(
+          sessions.slice(0, 3).map((s) => ({
+            sub: s.subject,
+            meta: `${s.trade} · ${s.room}`,
+            time: new Date(s.startedAt).toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }),
+            status: s.endedAt ? "Done" : "Active",
+            color: s.endedAt ? "#10B981" : "#2563EB",
+            bg: s.endedAt ? "#ECFDF5" : "#EFF6FF",
+          })),
+        );
+      } catch (err) {
+        console.error("Failed to load today data:", err);
+      }
+    }
+
+    loadTodayData();
+  }, []);
 
   // Start / End class
   async function toggleClass(idx) {
@@ -50,19 +89,23 @@ export default function HomePage() {
     if (state === "done") return;
 
     if (state === "idle") {
-      // START CLASS
       try {
+        const metaParts = cls.meta.split("—");
+        const classYear = metaParts[0]?.trim() || "Tech 1";
+        const tradeRoom = metaParts[1]?.split("·") || [];
+        const trade = tradeRoom[0]?.trim() || "General";
+        const room = tradeRoom[1]?.trim() || "Room 1";
+
         const res = await api.post("/teacher/class/start", {
           subject: cls.sub,
-          trade: cls.meta.split("—")[1]?.split("·")[0]?.trim() || "General",
-          classYear: cls.meta.split("—")[0]?.trim() || "Tech 1",
-          room: cls.meta.split("·")[1]?.trim() || cls.meta,
+          trade,
+          classYear,
+          room,
         });
         const sessionId = res.data.data.session.id;
-        setClassStates((prev) => ({ ...prev, [idx]: "active" }));
-        // Store session ID so we can end it later
         setClassStates((prev) => ({
           ...prev,
+          [idx]: "active",
           [`${idx}_sessionId`]: sessionId,
         }));
         setToast({
@@ -74,13 +117,9 @@ export default function HomePage() {
         setToast({ message, type: "error" });
       }
     } else if (state === "active") {
-      // END CLASS
       const sessionId = classStates[`${idx}_sessionId`];
       if (!sessionId) {
-        setToast({
-          message: "Session ID not found. Try again.",
-          type: "error",
-        });
+        setToast({ message: "Session not found. Try again.", type: "error" });
         return;
       }
       try {
@@ -659,91 +698,86 @@ export default function HomePage() {
           </button>
         </div>
 
-        {[
-          {
-            sub: "ICT — Tech 2 Computer Crafts",
-            meta: "Yesterday · 9:00–10:05 AM",
-            status: "Done",
-            color: "#10B981",
-            bg: "#ECFDF5",
-          },
-          {
-            sub: "English Language — Tech 1",
-            meta: "Yesterday · 11:10 AM",
-            status: "Done",
-            color: "#10B981",
-            bg: "#ECFDF5",
-          },
-          {
-            sub: "Basic Electricity — Tech 3",
-            meta: "2 days ago · 1:00–2:00 PM",
-            status: "Late start",
-            color: "#F59E0B",
-            bg: "#FEF3C7",
-          },
-        ].map((item, i) => (
+        {recentHistory.length === 0 ? (
           <div
-            key={i}
             style={{
-              background: "white",
-              borderRadius: 14,
-              padding: "12px 14px",
-              marginBottom: 8,
-              border: "1px solid #E2E8F0",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
+              textAlign: "center",
+              padding: "20px",
+              color: "#94A3B8",
+              fontSize: 13,
             }}
           >
+            No class history yet this week
+          </div>
+        ) : (
+          recentHistory.map((item, i) => (
             <div
+              key={i}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: item.bg,
-                flexShrink: 0,
+                background: "white",
+                borderRadius: 14,
+                padding: "12px 14px",
+                marginBottom: 8,
+                border: "1px solid #E2E8F0",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 12,
               }}
             >
-              <FiClock size={16} color={item.color} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
+              <div
                 style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#0F172A",
-                  margin: 0,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: item.bg,
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {item.sub}
-              </p>
-              <p
-                style={{ fontSize: 11.5, color: "#64748B", margin: "2px 0 0" }}
+                <FiClock size={16} color={item.color} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#0F172A",
+                    margin: 0,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {item.sub}
+                </p>
+                <p
+                  style={{
+                    fontSize: 11.5,
+                    color: "#64748B",
+                    margin: "2px 0 0",
+                  }}
+                >
+                  {item.meta} · {item.time}
+                </p>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: item.color,
+                  background: item.bg,
+                  padding: "3px 10px",
+                  borderRadius: 20,
+                  flexShrink: 0,
+                }}
               >
-                {item.meta}
-              </p>
+                {item.status}
+              </span>
             </div>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: item.color,
-                background: item.bg,
-                padding: "3px 10px",
-                borderRadius: 20,
-                flexShrink: 0,
-              }}
-            >
-              {item.status}
-            </span>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* ── FAB — Add Class ───────────────────────────────────────── */}

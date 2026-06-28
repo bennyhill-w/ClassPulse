@@ -49,6 +49,14 @@ const S = {
   },
 };
 
+function formatTime(date) {
+  return new Date(date).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function CheckInPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -64,6 +72,25 @@ export default function CheckInPage() {
   const [toast, setToast] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [checkInMethod, setCheckInMethod] = useState("");
+
+  useEffect(() => {
+    async function checkIfAlreadyCheckedIn() {
+      try {
+        const res = await api.get("/checkin/today");
+        const attendance = res.data.data.attendance;
+        if (attendance && !attendance.checkOutAt) {
+          sessionStorage.setItem(
+            "cp_checkin_time",
+            formatTime(new Date(attendance.checkInAt)),
+          );
+          navigate("/teacher/home", { replace: true });
+        }
+      } catch (err) {
+        // No attendance record — stay on check-in page
+      }
+    }
+    checkIfAlreadyCheckedIn();
+  }, [navigate]);
 
   // Live clock
   useEffect(() => {

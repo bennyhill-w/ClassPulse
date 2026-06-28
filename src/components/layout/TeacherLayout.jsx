@@ -13,7 +13,16 @@ export default function TeacherLayout() {
   const location = useLocation();
 
   return (
-    <div className="relative w-full max-w-sm mx-auto min-h-screen bg-bg flex flex-col overflow-hidden shadow-2xl">
+    <div
+      style={{
+        width: "100%",
+        minHeight: "100vh",
+        background: "#F1F5F9",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       {/* ── PAGE CONTENT ───────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden flex flex-col">
         <Outlet />
