@@ -29,12 +29,21 @@ export default function SplashPage() {
       setProgress(100);
       setStatusText("Ready!");
       setTimeout(() => {
-        if (isAuthenticated && user) {
-          if (user.role === "admin")
-            navigate("/admin/overview", { replace: true });
-          else navigate("/teacher/checkin", { replace: true });
+        // Re-read directly from localStorage — don't trust React state alone
+        const token = localStorage.getItem("classpulse_token");
+        const userStr = localStorage.getItem("classpulse_user");
+
+        if (token && userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user.role === "admin")
+              navigate("/admin/overview", { replace: true });
+            else navigate("/teacher/checkin", { replace: true });
+          } catch {
+            navigate("/login", { replace: true });
+          }
         } else {
-          navigate("/signup", { replace: true });
+          navigate("/login", { replace: true });
         }
       }, 400);
     }, 2400);

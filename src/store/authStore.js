@@ -22,6 +22,8 @@ const useAuthStore = create((set) => ({
   logout: () => {
     localStorage.removeItem("classpulse_token");
     localStorage.removeItem("classpulse_user");
+    sessionStorage.removeItem("cp_splash_shown");
+    sessionStorage.removeItem("cp_checkin_time");
     set({ user: null, token: null, isAuthenticated: false });
   },
 
