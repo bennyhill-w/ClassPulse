@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiUser,
   FiMail,
   FiCreditCard,
   FiLock,
@@ -10,11 +9,13 @@ import {
   FiEdit2,
   FiChevronRight,
   FiX,
-  FiCheck,
+  FiShield,
+  FiBook,
 } from "react-icons/fi";
 import { MdQrCode } from "react-icons/md";
 import useAuthStore from "../../store/authStore";
 import Toast from "../../components/ui/Toast";
+import api from "../../services/api";
 import { displayName, initials } from "../../utils/helpers";
 
 export default function ProfilePage() {
@@ -32,26 +33,59 @@ export default function ProfilePage() {
   });
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
   const [pwError, setPwError] = useState("");
+  const [stats, setStats] = useState({ totalClasses: 0, daysPresent: 0 });
 
   const name = displayName(user) || "Teacher";
-  const initls = initials(user);
+  const initls = initials(user) || "TC";
+
+  // Gradient colors based on initials
+  const colors = [
+    "#2563EB",
+    "#7C3AED",
+    "#059669",
+    "#DC2626",
+    "#0284C7",
+    "#D97706",
+  ];
+  const avatarColor =
+    colors[
+      (initls.charCodeAt(0) + (initls.charCodeAt(1) || 0)) % colors.length
+    ];
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await api.get("/teacher/class/history?filter=month");
+        setStats({
+          totalClasses: res.data.data.summary?.totalDone || 0,
+          daysPresent: res.data.data.summary?.totalSessions || 0,
+        });
+      } catch {}
+    }
+    loadStats();
+  }, []);
 
   function handleLogout() {
     logout();
     navigate("/", { replace: true });
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editForm.firstName.trim() || !editForm.lastName.trim()) {
       setToast({ message: "Name fields cannot be empty", type: "error" });
       return;
     }
-    updateUser({ ...user, ...editForm });
-    setShowEdit(false);
-    setToast({ message: "✅ Profile updated successfully", type: "success" });
+    try {
+      await api.patch("/teacher/profile", editForm);
+      updateUser({ ...user, ...editForm });
+      setShowEdit(false);
+      setToast({ message: "Profile updated successfully", type: "success" });
+    } catch {
+      setToast({ message: "Failed to update profile", type: "error" });
+    }
   }
 
-  function savePw() {
+  async function savePw() {
     if (!pwForm.current) {
       setPwError("Enter current password");
       return;
@@ -67,57 +101,21 @@ export default function ProfilePage() {
     setPwForm({ current: "", newPw: "", confirm: "" });
     setPwError("");
     setShowPw(false);
-    setToast({ message: "✅ Password changed successfully", type: "success" });
+    setToast({ message: "Password changed successfully", type: "success" });
   }
 
-  const infoRows = [
-    {
-      icon: <FiCreditCard size={16} />,
-      label: "Staff ID",
-      value: user?.staffId || "—",
-    },
-    { icon: <FiMail size={16} />, label: "Email", value: user?.email || "—" },
-  ];
-
-  const menuItems = [
-    {
-      icon: <FiEdit2 size={16} />,
-      label: "Edit Profile",
-      action: () => setShowEdit(true),
-    },
-    {
-      icon: <MdQrCode size={16} />,
-      label: "My QR Code",
-      action: () => setShowQr(true),
-    },
-    {
-      icon: <FiLock size={16} />,
-      label: "Change Password",
-      action: () => setShowPw(true),
-    },
-    {
-      icon: <FiBell size={16} />,
-      label: "Notification Settings",
-      action: () =>
-        setToast({
-          message: "Notification settings coming soon",
-          type: "success",
-        }),
-    },
-  ];
-
-  // ── INPUT STYLE ──────────────────────────────────────────────
   const inp = {
     width: "100%",
     height: 48,
-    borderRadius: 10,
+    borderRadius: 12,
     border: "1.5px solid #E2E8F0",
     background: "#F8FAFC",
     fontSize: 13,
     color: "#0F172A",
-    padding: "0 12px",
+    padding: "0 14px",
     outline: "none",
     fontFamily: "DM Sans, sans-serif",
+    boxSizing: "border-box",
   };
 
   return (
@@ -130,50 +128,131 @@ export default function ProfilePage() {
         background: "#F1F5F9",
       }}
     >
-      {/* ── HEADER ─────────────────────────────────────────────── */}
+      {/* ── HERO HEADER ────────────────────────────────────────── */}
       <div
         style={{
           background: "linear-gradient(135deg, #1E40AF, #2563EB)",
-          padding: "28px 20px 24px",
+          padding: "28px 20px 32px",
           flexShrink: 0,
-          textAlign: "center",
           position: "relative",
+          overflow: "hidden",
         }}
       >
-        {/* Avatar */}
+        {/* Bg shapes */}
         <div
           style={{
-            width: 72,
-            height: 72,
+            position: "absolute",
+            top: -40,
+            right: -40,
+            width: 160,
+            height: 160,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.2)",
-            border: "3px solid rgba(255,255,255,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 12px",
-            fontSize: 26,
-            fontWeight: 800,
-            color: "white",
-            fontFamily: "Sora, sans-serif",
+            background: "rgba(255,255,255,0.06)",
           }}
-        >
-          {initls}
-        </div>
-        <h2
+        />
+        <div
           style={{
-            fontFamily: "Sora, sans-serif",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "white",
-            margin: "0 0 4px",
+            position: "absolute",
+            bottom: -20,
+            left: 60,
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.04)",
+          }}
+        />
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            zIndex: 1,
+            position: "relative",
           }}
         >
-          {name}
-        </h2>
-        <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, margin: 0 }}>
-          Staff ID: {user?.staffId || "—"}
-        </p>
+          {/* Avatar */}
+          <div
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              background: avatarColor,
+              border: "3px solid rgba(255,255,255,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 26,
+              fontWeight: 800,
+              color: "white",
+              fontFamily: "Sora, sans-serif",
+              marginBottom: 12,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+            }}
+          >
+            {initls}
+          </div>
+          <h2
+            style={{
+              fontFamily: "Sora, sans-serif",
+              fontSize: 20,
+              fontWeight: 700,
+              color: "white",
+              margin: "0 0 4px",
+            }}
+          >
+            {name}
+          </h2>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.65)",
+              fontSize: 13,
+              margin: "0 0 16px",
+            }}
+          >
+            {user?.staffId} · {user?.trade || "G.T.C Agidingbi"}
+          </p>
+
+          {/* Quick stats */}
+          <div style={{ display: "flex", gap: 16 }}>
+            {[
+              { val: stats.totalClasses, label: "Classes" },
+              { val: stats.daysPresent, label: "Sessions" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  borderRadius: 12,
+                  padding: "10px 20px",
+                  textAlign: "center",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "Sora, sans-serif",
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: "white",
+                    margin: 0,
+                  }}
+                >
+                  {s.val}
+                </p>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.65)",
+                    margin: 0,
+                  }}
+                >
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────── */}
@@ -183,12 +262,29 @@ export default function ProfilePage() {
           style={{
             background: "white",
             borderRadius: 16,
-            marginBottom: 16,
+            marginBottom: 12,
             border: "1px solid #E2E8F0",
             overflow: "hidden",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
           }}
         >
-          {infoRows.map((row, i) => (
+          {[
+            {
+              icon: <FiCreditCard size={15} />,
+              label: "Staff ID",
+              value: user?.staffId || "—",
+            },
+            {
+              icon: <FiMail size={15} />,
+              label: "Email",
+              value: user?.email || "—",
+            },
+            {
+              icon: <FiBook size={15} />,
+              label: "Trade",
+              value: user?.trade || "Not set",
+            },
+          ].map((row, i) => (
             <div
               key={i}
               style={{
@@ -196,8 +292,7 @@ export default function ProfilePage() {
                 alignItems: "center",
                 gap: 12,
                 padding: "14px 16px",
-                borderBottom:
-                  i < infoRows.length - 1 ? "1px solid #F1F5F9" : "none",
+                borderBottom: i < 2 ? "1px solid #F8FAFC" : "none",
               }}
             >
               <div
@@ -218,12 +313,12 @@ export default function ProfilePage() {
               <div style={{ flex: 1 }}>
                 <p
                   style={{
-                    fontSize: 11,
+                    fontSize: 10.5,
                     color: "#94A3B8",
                     fontWeight: 600,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
-                    margin: "0 0 2px",
+                    margin: "0 0 1px",
                   }}
                 >
                   {row.label}
@@ -243,17 +338,70 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {/* Menu items */}
+        {/* Menu */}
         <div
           style={{
             background: "white",
             borderRadius: 16,
-            marginBottom: 16,
+            marginBottom: 12,
             border: "1px solid #E2E8F0",
             overflow: "hidden",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
           }}
         >
-          {menuItems.map((item, i) => (
+          <div style={{ padding: "10px 16px 6px" }}>
+            <p
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: "#94A3B8",
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+                margin: 0,
+              }}
+            >
+              Account
+            </p>
+          </div>
+          {[
+            {
+              icon: <FiEdit2 size={15} />,
+              label: "Edit Profile",
+              action: () => setShowEdit(true),
+              color: "#2563EB",
+              bg: "#EFF6FF",
+            },
+            {
+              icon: <MdQrCode size={15} />,
+              label: "My QR Code",
+              action: () => setShowQr(true),
+              color: "#7C3AED",
+              bg: "#F5F3FF",
+            },
+            {
+              icon: <FiLock size={15} />,
+              label: "Change Password",
+              action: () => setShowPw(true),
+              color: "#059669",
+              bg: "#ECFDF5",
+            },
+            {
+              icon: <FiBell size={15} />,
+              label: "Notification Prefs",
+              action: () =>
+                setToast({ message: "Coming soon", type: "default" }),
+              color: "#F59E0B",
+              bg: "#FEF3C7",
+            },
+            {
+              icon: <FiShield size={15} />,
+              label: "Privacy & Security",
+              action: () =>
+                setToast({ message: "Coming soon", type: "default" }),
+              color: "#64748B",
+              bg: "#F1F5F9",
+            },
+          ].map((item, i) => (
             <button
               key={i}
               onClick={item.action}
@@ -262,11 +410,10 @@ export default function ProfilePage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                padding: "14px 16px",
+                padding: "13px 16px",
                 background: "none",
                 border: "none",
-                borderBottom:
-                  i < menuItems.length - 1 ? "1px solid #F1F5F9" : "none",
+                borderTop: "1px solid #F8FAFC",
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -276,12 +423,12 @@ export default function ProfilePage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  background: "#EFF6FF",
+                  background: item.bg,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
-                  color: "#2563EB",
+                  color: item.color,
                 }}
               >
                 {item.icon}
@@ -297,9 +444,36 @@ export default function ProfilePage() {
               >
                 {item.label}
               </span>
-              <FiChevronRight size={16} color="#94A3B8" />
+              <FiChevronRight size={15} color="#CBD5E1" />
             </button>
           ))}
+        </div>
+
+        {/* App info */}
+        <div
+          style={{
+            background: "white",
+            borderRadius: 16,
+            marginBottom: 16,
+            border: "1px solid #E2E8F0",
+            padding: "14px 16px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+              Classpulse v1.0
+            </p>
+            <p style={{ fontSize: 13, color: "#94A3B8", margin: 0 }}>
+              G.T.C Agidingbi
+            </p>
+          </div>
         </div>
 
         {/* Logout */}
@@ -326,7 +500,7 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* ── EDIT PROFILE MODAL ─────────────────────────────────── */}
+      {/* ── EDIT MODAL ─────────────────────────────────────────── */}
       {showEdit && (
         <div
           style={{
@@ -344,7 +518,7 @@ export default function ProfilePage() {
           <div
             style={{
               width: "100%",
-              maxWidth: 420,
+              maxWidth: 480,
               background: "white",
               borderRadius: "28px 28px 0 0",
               padding: "28px 24px 40px",
@@ -414,7 +588,7 @@ export default function ProfilePage() {
                       letterSpacing: "0.8px",
                       color: "#64748B",
                       display: "block",
-                      marginBottom: 5,
+                      marginBottom: 6,
                     }}
                   >
                     {f.label}
@@ -470,7 +644,7 @@ export default function ProfilePage() {
           <div
             style={{
               width: "100%",
-              maxWidth: 420,
+              maxWidth: 480,
               background: "white",
               borderRadius: "28px 28px 0 0",
               padding: "28px 24px 40px",
@@ -547,7 +721,7 @@ export default function ProfilePage() {
                       letterSpacing: "0.8px",
                       color: "#64748B",
                       display: "block",
-                      marginBottom: 5,
+                      marginBottom: 6,
                     }}
                   >
                     {f.label}
@@ -599,7 +773,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ── QR CODE MODAL ──────────────────────────────────────── */}
+      {/* ── QR MODAL ───────────────────────────────────────────── */}
       {showQr && (
         <div
           style={{
@@ -640,7 +814,6 @@ export default function ProfilePage() {
             <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 20px" }}>
               Your personal identification code
             </p>
-            {/* QR code grid simulation */}
             <div
               style={{
                 width: 160,
@@ -655,7 +828,6 @@ export default function ProfilePage() {
               }}
             >
               <svg viewBox="0 0 100 100" width="130" height="130">
-                {/* Simple QR pattern */}
                 {[0, 1, 2, 3, 4, 5, 6].map((r) =>
                   [0, 1, 2, 3, 4, 5, 6].map((c) => {
                     const inTL = r < 3 && c < 3;
@@ -694,7 +866,7 @@ export default function ProfilePage() {
               {name}
             </p>
             <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 20px" }}>
-              {user?.staffId || "—"} · G.T.C Agidingbi
+              {user?.staffId} · G.T.C Agidingbi
             </p>
             <button
               onClick={() => setShowQr(false)}

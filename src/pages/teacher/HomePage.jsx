@@ -26,6 +26,9 @@ export default function HomePage() {
   const [classStates, setClassStates] = useState({});
   const [todayClasses, setTodayClasses] = useState([]);
   const [recentHistory, setRecentHistory] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
 
   const checkInTime = sessionStorage.getItem("cp_checkin_time") || "8:00 AM";
 
@@ -36,6 +39,22 @@ export default function HomePage() {
       setDate(shortDate());
     }, 1000);
     return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const res = await api.get("/teacher/notifications");
+        setNotifications(res.data.data.notifications || []);
+        setUnreadCount(res.data.data.unreadCount || 0);
+      } catch (err) {
+        console.error("Notifications error:", err);
+      }
+    }
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -254,6 +273,7 @@ export default function HomePage() {
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button
+              onClick={() => setShowNotifs((p) => !p)}
               style={{
                 width: 38,
                 height: 38,
@@ -264,9 +284,24 @@ export default function HomePage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                position: "relative",
               }}
             >
               <FiBell size={18} color="white" />
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#EF4444",
+                    border: "2px solid #2563EB",
+                  }}
+                />
+              )}
             </button>
             <button
               onClick={() => navigate("/teacher/profile")}
@@ -815,6 +850,118 @@ export default function HomePage() {
           />
         </svg>
       </button>
+
+      {/* ── NOTIFICATIONS PANEL ────────────────────────────── */}
+      {showNotifs && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 50 }}
+          onClick={() => setShowNotifs(false)}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 70,
+              right: 16,
+              width: 300,
+              background: "white",
+              borderRadius: 16,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+              border: "1px solid #E2E8F0",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                padding: "14px 16px",
+                borderBottom: "1px solid #E2E8F0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h3
+                style={{
+                  fontFamily: "Sora, sans-serif",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "#0F172A",
+                  margin: 0,
+                }}
+              >
+                Notifications
+              </h3>
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#2563EB",
+                    background: "#EFF6FF",
+                    padding: "2px 8px",
+                    borderRadius: 20,
+                  }}
+                >
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+            <div style={{ maxHeight: 320, overflowY: "auto" }}>
+              {notifications.length === 0 ? (
+                <div
+                  style={{
+                    padding: "24px",
+                    textAlign: "center",
+                    color: "#94A3B8",
+                    fontSize: 13,
+                  }}
+                >
+                  No notifications yet
+                </div>
+              ) : (
+                notifications.map((n, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "12px 16px",
+                      borderBottom: "1px solid #F8FAFC",
+                      background: n.read ? "white" : "#F0F9FF",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        margin: "0 0 3px",
+                      }}
+                    >
+                      {n.title}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "#64748B",
+                        margin: "0 0 4px",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {n.body}
+                    </p>
+                    <p style={{ fontSize: 10.5, color: "#94A3B8", margin: 0 }}>
+                      {new Date(n.createdAt).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CHECKOUT MODAL ─────────────────────────────────────── */}
       {showCheckout && (
