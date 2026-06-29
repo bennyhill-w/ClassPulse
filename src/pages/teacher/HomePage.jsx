@@ -29,6 +29,7 @@ export default function HomePage() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [todayAttendance, setTodayAttendance] = useState(null);
 
   const checkInTime = sessionStorage.getItem("cp_checkin_time") || "8:00 AM";
 
@@ -92,6 +93,9 @@ export default function HomePage() {
             bg: s.endedAt ? "#ECFDF5" : "#EFF6FF",
           })),
         );
+
+        const attRes = await api.get("/checkin/today");
+        setTodayAttendance(attRes.data.data.attendance);
       } catch (err) {
         console.error("Failed to load today data:", err);
       }
@@ -343,8 +347,10 @@ export default function HomePage() {
             >
               <span
                 style={{
-                  background: "rgba(52,211,153,0.25)",
-                  color: "#A7F3D0",
+                  background: todayAttendance?.isLate
+                    ? "rgba(245,158,11,0.25)"
+                    : "rgba(52,211,153,0.25)",
+                  color: todayAttendance?.isLate ? "#FCD34D" : "#A7F3D0",
                   fontSize: 11,
                   fontWeight: 700,
                   padding: "3px 10px",
@@ -352,7 +358,9 @@ export default function HomePage() {
                   letterSpacing: "0.5px",
                 }}
               >
-                ON TIME ✓
+                {todayAttendance?.isLate
+                  ? `LATE — ${todayAttendance.lateMinutes} mins ⚠`
+                  : "ON TIME ✓"}
               </span>
               <div
                 style={{
@@ -390,7 +398,14 @@ export default function HomePage() {
               }}
             >
               <FiClock size={12} /> Arrived at{" "}
-              <strong style={{ color: "white" }}>{checkInTime}</strong>
+              <strong style={{ color: "white" }}>
+                {todayAttendance
+                  ? new Date(todayAttendance.checkInAt).toLocaleTimeString(
+                      "en-US",
+                      { hour: "numeric", minute: "2-digit", hour12: true },
+                    )
+                  : checkInTime}
+              </strong>
             </p>
             <button
               onClick={() => setShowCheckout(true)}
