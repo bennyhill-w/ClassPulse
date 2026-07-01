@@ -394,7 +394,9 @@ export default function AdminApp() {
       >
         {/* ── TOPBAR ─────────────────────────────────────────────── */}
         <header
+          className="admin-topbar"
           style={{
+            width: "100%",
             background: "white",
             borderBottom: "1px solid #E2E8F0",
             padding: "0 20px",
@@ -411,6 +413,7 @@ export default function AdminApp() {
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* Hamburger */}
             <button
+              className="admin-hamburger"
               onClick={() => setSidebarOpen((p) => !p)}
               style={{
                 width: 38,
@@ -558,6 +561,7 @@ export default function AdminApp() {
     }
     .admin-main {
       margin-left: 260px !important;
+      width: calc(100% - 260px) !important;
     }
     .admin-clock {
       display: flex !important;
