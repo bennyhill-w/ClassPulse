@@ -110,6 +110,7 @@ export default function AdminApp() {
       style={{
         display: "flex",
         minHeight: "100vh",
+        width: "100%",
         background: "#F1F5F9",
         fontFamily: "DM Sans, sans-serif",
       }}
@@ -134,6 +135,7 @@ export default function AdminApp() {
       <aside
         style={{
           width: 260,
+          maxWidth: "85vw",
           flexShrink: 0,
           background: "#0F1F47",
           display: "flex",
@@ -145,6 +147,7 @@ export default function AdminApp() {
           zIndex: 100,
           transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.3s ease",
+          overflowX: "hidden",
         }}
         className="admin-sidebar"
       >
@@ -541,7 +544,17 @@ export default function AdminApp() {
         </header>
 
         {/* ── PAGE CONTENT ─────────────────────────────────────── */}
-        <main style={{ flex: 1, padding: 24, overflowY: "auto" }}>
+        <main
+          style={{
+            flex: 1,
+            padding: 24,
+            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
+            minWidth: 0,
+            boxSizing: "border-box",
+          }}
+        >
           <Outlet />
         </main>
       </div>
@@ -578,6 +591,21 @@ export default function AdminApp() {
     }
     .admin-main {
       margin-left: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .admin-topbar {
+      padding: 12px 12px !important;
+      height: auto !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+    }
+    .admin-topbar > div:first-child {
+      min-width: 0 !important;
+      flex: 1 1 100% !important;
+    }
+    main {
+      padding: 16px 12px !important;
     }
   }
 

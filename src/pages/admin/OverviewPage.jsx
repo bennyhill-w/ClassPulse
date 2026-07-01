@@ -154,12 +154,24 @@ export default function OverviewPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .overview-stats-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .overview-main-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
       {/* Date + Refresh */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
         <p style={{ fontSize: 13, color: "#94A3B8", margin: 0 }}>
@@ -194,6 +206,7 @@ export default function OverviewPage() {
           gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 16,
         }}
+        className="overview-stats-grid"
       >
         <StatCard
           icon={MdPeople}
@@ -244,6 +257,8 @@ export default function OverviewPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -300,6 +315,7 @@ export default function OverviewPage() {
       {/* Bottom Grid */}
       <div
         style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}
+        className="overview-main-grid"
       >
         {/* Live Feed */}
         <div

@@ -124,6 +124,13 @@ export default function TeachersPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .teachers-table {
+            min-width: 560px !important;
+          }
+        }
+      `}</style>
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <div
         style={{
@@ -173,7 +180,14 @@ export default function TeachersPage() {
 
       {/* ── SEARCH + FILTERS ───────────────────────────────────── */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            minWidth: 220,
+            width: "100%",
+          }}
+        >
           <FiSearch
             style={{
               position: "absolute",
@@ -194,7 +208,7 @@ export default function TeachersPage() {
             style={{ ...inp, paddingLeft: 38, height: 42 }}
           />
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {FILTERS.map((f) => (
             <button
               key={f}
@@ -233,7 +247,8 @@ export default function TeachersPage() {
       >
         <div style={{ overflowX: "auto" }}>
           <table
-            style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}
+            style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}
+            className="teachers-table"
           >
             <thead>
               <tr style={{ background: "#F8FAFC" }}>

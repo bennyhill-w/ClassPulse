@@ -37,6 +37,16 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .analytics-metrics {
+            grid-template-columns: 1fr !important;
+          }
+          .analytics-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
       <div
         style={{
           display: "flex",
@@ -92,6 +102,7 @@ export default function AnalyticsPage() {
           gridTemplateColumns: "repeat(auto-fit, minmax(180px,1fr))",
           gap: 14,
         }}
+        className="analytics-metrics"
       >
         {[
           {
@@ -148,7 +159,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── TREND + CHART ──────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+        className="analytics-grid"
+      >
         {/* Weekly check-in bar chart */}
         <div
           style={{
