@@ -70,22 +70,46 @@ export default function ReportsPage() {
 
   async function generate() {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    const newReport = {
-      name: `${reportType.replace(" ", "_")}_${dateFrom}.pdf`,
-      type: reportType.split(" ")[0],
-      date: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      by: "Mrs. Fatima",
-      size: `${Math.floor(Math.random() * 200 + 80)} KB`,
-    };
-    setReports((p) => [newReport, ...p]);
-    setLoading(false);
-    setToast(`✅ ${reportType} report generated successfully!`);
-    setTimeout(() => setToast(""), 3000);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/admin/reports/generate?type=${reportType.toLowerCase().split(" ")[0]}&dateFrom=${dateFrom}&dateTo=${dateTo}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("classpulse_token")}`,
+          },
+        },
+      );
+
+      if (!response.ok) throw new Error("Failed to generate report");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Classpulse_${reportType}_${dateFrom}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      const newReport = {
+        name: `${reportType.replace(" ", "_")}_${dateFrom}.pdf`,
+        type: reportType.split(" ")[0],
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        by: "Principal",
+        size: "Generated",
+      };
+      setReports((p) => [newReport, ...p]);
+      setToast("✅ Report generated and downloaded successfully!");
+      setTimeout(() => setToast(""), 3000);
+    } catch (err) {
+      setToast("❌ Failed to generate report. Try again.");
+      setTimeout(() => setToast(""), 3000);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
