@@ -5,6 +5,8 @@ import useAuthStore from "./store/authStore";
 import SplashPage from "./pages/auth/SplashPage";
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 // ── TEACHER PAGES ────────────────────────────────────────────────
 import TeacherLayout from "./components/layout/TeacherLayout";
@@ -41,6 +43,8 @@ export default function App() {
         <Route path="/" element={<SplashPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* ── TEACHER ROUTES ─────────────────────────────────── */}
         {/* Check-in is outside TeacherLayout - no bottom nav */}
