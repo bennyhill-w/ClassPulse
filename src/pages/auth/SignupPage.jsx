@@ -163,6 +163,7 @@ export default function SignupPage() {
     staffId: "",
     email: "",
     password: "",
+    staffType: "teaching",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -183,6 +184,7 @@ export default function SignupPage() {
     else if (!isValidEmail(form.email)) errs.email = "Enter a valid email";
     if (!form.password) errs.password = "Password is required";
     else if (form.password.length < 6) errs.password = "Minimum 6 characters";
+    if (!form.staffType) errs.staffType = "Staff type is required";
     return errs;
   }
 
@@ -202,6 +204,7 @@ export default function SignupPage() {
         staffId: form.staffId,
         email: form.email,
         password: form.password,
+        staffType: form.staffType,
       });
 
       // User should log in themselves after signup
@@ -432,6 +435,59 @@ export default function SignupPage() {
             onChange={handleChange}
             options={TITLES}
           />
+
+          {/* Staff Type */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+                color: "#64748B",
+              }}
+            >
+              Staff Type
+            </label>
+            <div style={{ display: "flex", gap: 10 }}>
+              {["teaching", "non-teaching"].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, staffType: type }))}
+                  style={{
+                    flex: 1,
+                    height: 48,
+                    borderRadius: 12,
+                    border: `1.5px solid ${
+                      form.staffType === type ? "#2563EB" : "#E2E8F0"
+                    }`,
+                    background: form.staffType === type ? "#EFF6FF" : "#F8FAFC",
+                    color: form.staffType === type ? "#2563EB" : "#64748B",
+                    fontSize: 13,
+                    fontWeight: form.staffType === type ? 700 : 500,
+                    cursor: "pointer",
+                    fontFamily: "DM Sans, sans-serif",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {type === "teaching" ? "👨‍🏫 Teaching" : "👤 Non-Teaching"}
+                </button>
+              ))}
+            </div>
+            {errors.staffType && (
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "#EF4444",
+                  fontWeight: 600,
+                  margin: 0,
+                }}
+              >
+                {errors.staffType}
+              </p>
+            )}
+          </div>
 
           <FormInput
             label="Staff ID"

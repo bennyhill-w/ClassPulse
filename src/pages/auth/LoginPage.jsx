@@ -152,9 +152,11 @@ export default function LoginPage() {
       // Save to Zustand store and localStorage
       login(user, token);
 
-      // Redirect based on role
+      // Redirect based on role and staff type
       if (user.role === "admin") {
         navigate("/admin/overview", { replace: true });
+      } else if (user.staffType === "non-teaching") {
+        navigate("/teacher/staff-home", { replace: true });
       } else {
         navigate("/teacher/checkin", { replace: true });
       }

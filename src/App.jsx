@@ -15,7 +15,7 @@ import HomePage from "./pages/teacher/HomePage";
 import SchedulePage from "./pages/teacher/SchedulePage";
 import HistoryPage from "./pages/teacher/HistoryPage";
 import ProfilePage from "./pages/teacher/ProfilePage";
-
+import StaffHomePage from "./pages/teacher/StaffHomePage";
 // ── ADMIN PAGES ──────────────────────────────────────────────────
 import AdminApp from "./pages/admin/AdminApp";
 import OverviewPage from "./pages/admin/OverviewPage";
@@ -70,6 +70,7 @@ export default function App() {
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="staff-home" element={<StaffHomePage />} />
         </Route>
 
         {/* ── ADMIN ──────────────────────────────────────────── */}

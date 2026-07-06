@@ -57,6 +57,14 @@ function formatTime(date) {
   });
 }
 
+function formatLateTime(minutes) {
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? "s" : ""} late`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (mins === 0) return `${hours} hour${hours !== 1 ? "s" : ""} late`;
+  return `${hours}h ${mins}m late`;
+}
+
 export default function CheckInPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -164,7 +172,11 @@ export default function CheckInPage() {
 
   // ── GO TO DASHBOARD ─────────────────────────────────────────────
   function goToDashboard() {
-    navigate("/teacher/home", { replace: true });
+    if (user?.staffType === "non-teaching") {
+      navigate("/teacher/staff-home", { replace: true });
+    } else {
+      navigate("/teacher/home", { replace: true });
+    }
   }
 
   const name = displayName(user) || "Teacher";
@@ -236,11 +248,11 @@ export default function CheckInPage() {
             style={{
               display: "inline-block",
               background: isLate
-                ? "rgba(239,68,68,0.2)"
+                ? "rgba(245,158,11,0.2)"
                 : "rgba(16,185,129,0.2)",
-              border: isLate
-                ? "1px solid rgba(239,68,68,0.4)"
-                : "1px solid rgba(16,185,129,0.4)",
+              border: `1px solid ${
+                isLate ? "rgba(245,158,11,0.4)" : "rgba(16,185,129,0.4)"
+              }`,
               borderRadius: 20,
               padding: "4px 14px",
               marginBottom: 16,
@@ -249,11 +261,11 @@ export default function CheckInPage() {
             <span
               style={{
                 fontSize: 12,
-                color: isLate ? "#FECACA" : "#6EE7B7",
+                color: isLate ? "#FCD34D" : "#6EE7B7",
                 fontWeight: 700,
               }}
             >
-              {isLate ? `LATE — ${lateMinutes} mins ⚠` : "ON TIME ✓"}
+              {isLate ? `${formatLateTime(lateMinutes)} ⚠` : "ON TIME ✓"}
             </span>
           </div>
 
@@ -276,9 +288,7 @@ export default function CheckInPage() {
             }}
           >
             {isLate
-              ? `You are ${lateMinutes} minute${
-                  lateMinutes !== 1 ? "s" : ""
-                } late. Please proceed to your class.`
+              ? `You are ${formatLateTime(lateMinutes)}. Please proceed to your class.`
               : `Welcome to G.T.C Agidingbi, ${user?.lastName || "Teacher"}`}
           </p>
 
