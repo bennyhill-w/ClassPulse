@@ -91,7 +91,11 @@ export default function CheckInPage() {
             "cp_checkin_time",
             formatTime(new Date(attendance.checkInAt)),
           );
-          navigate("/teacher/home", { replace: true });
+          if (user?.staffType === "non-teaching") {
+            navigate("/teacher/staff-home", { replace: true });
+          } else {
+            navigate("/teacher/home", { replace: true });
+          }
         }
       } catch (err) {
         // No attendance record — stay on check-in page

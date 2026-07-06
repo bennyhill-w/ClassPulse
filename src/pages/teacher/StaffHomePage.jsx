@@ -92,24 +92,6 @@ export default function StaffHomePage() {
     >
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "14px 20px 0",
-        }}
-      >
-        <span style={{ color: "white", fontSize: 12, fontWeight: 700 }}>
-          {time}
-        </span>
-        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-          G.T.C Agidingbi
-        </span>
-        <span style={{ color: "white", fontSize: 12, fontWeight: 700 }}>
-          100%
-        </span>
-      </div>
-
-      <div
-        style={{
           padding: "32px 24px 24px",
           flex: 1,
           display: "flex",
