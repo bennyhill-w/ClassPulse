@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { FiPlus, FiTrash2, FiChevronDown, FiX } from "react-icons/fi";
 import api from "../../services/api";
 import Toast from "../../components/ui/Toast";
-import { TIMETABLE } from "../../utils/timetable";
 import { TRADES, SUBJECTS, CLASS_YEARS } from "../../utils/constants";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -47,7 +46,13 @@ export default function SchedulePage() {
   const initDow = todayDow === 0 || todayDow === 6 ? 1 : todayDow;
 
   const [activeDow, setActiveDow] = useState(initDow);
-  const [timetable, setTimetable] = useState({ ...TIMETABLE });
+  const [timetable, setTimetable] = useState({
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+  });
   const [showForm, setShowForm] = useState(false);
   const [toast, setToast] = useState(null);
   const [confirmIdx, setConfirmIdx] = useState(null);

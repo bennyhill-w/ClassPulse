@@ -212,6 +212,20 @@ export default function SettingsPage() {
     );
   }
 
+  if (loading)
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 300,
+        }}
+      >
+        <p style={{ color: "#94A3B8", fontSize: 14 }}>Loading settings...</p>
+      </div>
+    );
+
   return (
     <div
       style={{

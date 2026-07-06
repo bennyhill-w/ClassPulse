@@ -8,54 +8,6 @@ import {
   MdNotifications,
 } from "react-icons/md";
 
-const INITIAL_ALERTS = [
-  {
-    id: 1,
-    type: "danger",
-    icon: MdPersonOff,
-    title: "Mrs. Bola Taiwo — Absent (No notification)",
-    desc: "No check-in as of 10:00 AM. Technical Drawing class has no teacher. TCH-004",
-    teacher: "Mrs. Bola Taiwo",
-    time: "9:00 AM",
-  },
-  {
-    id: 2,
-    type: "warn",
-    icon: MdAccessTime,
-    title: "Mr. Emeka Okafor — Late Arrival",
-    desc: "Checked in 20 minutes late at 8:20 AM. Physics class delayed. TCH-003",
-    teacher: "Mr. Emeka Okafor",
-    time: "8:20 AM",
-  },
-  {
-    id: 3,
-    type: "danger",
-    icon: MdWarning,
-    title: "Technical Drawing — Tech 2 Draughtsmanship unattended",
-    desc: "Scheduled 11:00 AM–12:00 PM. Teacher absent. Admin action needed.",
-    teacher: null,
-    time: "11:00 AM",
-  },
-  {
-    id: 4,
-    type: "warn",
-    icon: MdAccessTime,
-    title: "Mr. Tunde Rahman — 5th consecutive late arrival",
-    desc: "Pattern detected. Average late by 28 minutes. Recommend formal warning. TCH-008",
-    teacher: "Mr. Tunde Rahman",
-    time: "8:28 AM",
-  },
-  {
-    id: 5,
-    type: "warn",
-    icon: MdNotifications,
-    title: "3 teachers have 3+ absences this month",
-    desc: "Emeka O., Bola T., Tunde R. require disciplinary follow-up.",
-    teacher: null,
-    time: "Today",
-  },
-];
-
 const STYLE = {
   danger: { border: "#FECACA", bg: "#FEF2F2", icon: "#EF4444" },
   warn: { border: "#FDE68A", bg: "#FFFBF0", icon: "#F59E0B" },
@@ -90,6 +42,8 @@ export default function AlertsPage() {
       }
     }
     loadAlerts();
+    const interval = setInterval(loadAlerts, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   async function dismiss(id) {

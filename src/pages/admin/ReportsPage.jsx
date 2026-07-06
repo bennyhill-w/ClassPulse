@@ -2,44 +2,6 @@ import { useState } from "react";
 import { FiDownload, FiEye, FiFileText } from "react-icons/fi";
 import { MdAssignment } from "react-icons/md";
 
-const RECENT_REPORTS = [
-  {
-    name: "April_2026_Attendance.pdf",
-    type: "Monthly",
-    date: "May 1, 2026",
-    by: "Mrs. Fatima",
-    size: "245 KB",
-  },
-  {
-    name: "Week18_Summary.pdf",
-    type: "Weekly",
-    date: "May 5, 2026",
-    by: "Mrs. Fatima",
-    size: "128 KB",
-  },
-  {
-    name: "TCH001_Term_Report.pdf",
-    type: "Teacher",
-    date: "Apr 28, 2026",
-    by: "Mrs. Fatima",
-    size: "89 KB",
-  },
-  {
-    name: "March_2026_Attendance.pdf",
-    type: "Monthly",
-    date: "Apr 1, 2026",
-    by: "Mrs. Fatima",
-    size: "231 KB",
-  },
-  {
-    name: "Week15_Summary.pdf",
-    type: "Weekly",
-    date: "Apr 14, 2026",
-    by: "Mrs. Fatima",
-    size: "114 KB",
-  },
-];
-
 const TYPE_COLORS = {
   Monthly: { color: "#F59E0B", bg: "#FEF3C7" },
   Weekly: { color: "#2563EB", bg: "#EFF6FF" },
@@ -51,7 +13,7 @@ export default function ReportsPage() {
   const [dateFrom, setDateFrom] = useState("2026-05-01");
   const [dateTo, setDateTo] = useState("2026-05-31");
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState(RECENT_REPORTS);
+  const [reports, setReports] = useState([]);
   const [toast, setToast] = useState("");
 
   const inp = {
