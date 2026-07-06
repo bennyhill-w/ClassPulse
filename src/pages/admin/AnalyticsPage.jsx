@@ -35,6 +35,20 @@ export default function AnalyticsPage() {
 
   const isUp = (data.trend || "+0%").startsWith("+");
 
+  if (loading)
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 300,
+        }}
+      >
+        <p style={{ color: "#94A3B8", fontSize: 14 }}>Loading analytics...</p>
+      </div>
+    );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
@@ -356,7 +370,7 @@ export default function AnalyticsPage() {
               gap: 14,
               padding: "14px 20px",
               borderBottom:
-                i < TOP_TEACHERS.length - 1 ? "1px solid #F8FAFC" : "none",
+                i < topTeachers.length - 1 ? "1px solid #F8FAFC" : "none",
             }}
           >
             <span
@@ -375,7 +389,13 @@ export default function AnalyticsPage() {
                 width: 38,
                 height: 38,
                 borderRadius: 10,
-                background: t.color,
+                background: [
+                  "#2563EB",
+                  "#10B981",
+                  "#F59E0B",
+                  "#8B5CF6",
+                  "#EC4899",
+                ][i % 5],
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -385,7 +405,7 @@ export default function AnalyticsPage() {
                 flexShrink: 0,
               }}
             >
-              {t.init}
+              {t.initials}
             </div>
             <div style={{ flex: 1 }}>
               <p

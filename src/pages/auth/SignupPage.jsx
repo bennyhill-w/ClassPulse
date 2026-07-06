@@ -371,11 +371,11 @@ export default function SignupPage() {
             onError={() =>
               setToast({ message: "Google sign-in cancelled.", type: "error" })
             }
-            width="100%"
             text="continue_with"
             shape="rectangular"
             theme="outline"
             size="large"
+            style={{ width: "100%" }}
           />
         </div>
 
