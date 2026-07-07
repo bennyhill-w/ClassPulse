@@ -87,10 +87,9 @@ export default function CheckInPage() {
         const res = await api.get("/checkin/today");
         const attendance = res.data.data.attendance;
         if (attendance && !attendance.checkOutAt) {
-          sessionStorage.setItem(
-            "cp_checkin_time",
-            formatTime(new Date(attendance.checkInAt)),
-          );
+          // Always use current time for display
+          const currentTime = formatTime(new Date());
+          sessionStorage.setItem("cp_checkin_time", currentTime);
           if (user?.staffType === "non-teaching") {
             navigate("/teacher/staff-home", { replace: true });
           } else {
@@ -129,8 +128,10 @@ export default function CheckInPage() {
       });
 
       const { checkInTime: t, isLate: late, lateMinutes: mins } = res.data.data;
-      sessionStorage.setItem("cp_checkin_time", t);
-      setCheckInTime(t);
+      // Always use current time at moment of check-in for display
+      const currentTime = formatTime(new Date());
+      sessionStorage.setItem("cp_checkin_time", currentTime);
+      setCheckInTime(currentTime);
       setIsLate(late);
       setLateMinutes(mins);
       setCheckInMethod("GPS Location");
@@ -158,8 +159,10 @@ export default function CheckInPage() {
       });
 
       const { checkInTime: t, isLate: late, lateMinutes: mins } = res.data.data;
-      sessionStorage.setItem("cp_checkin_time", t);
-      setCheckInTime(t);
+      // Always use current time at moment of check-in for display
+      const currentTime = formatTime(new Date());
+      sessionStorage.setItem("cp_checkin_time", currentTime);
+      setCheckInTime(currentTime);
       setIsLate(late);
       setLateMinutes(mins);
       setCheckInMethod("QR Code Scan");
