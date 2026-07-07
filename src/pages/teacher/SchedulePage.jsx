@@ -58,9 +58,13 @@ export default function SchedulePage() {
   const [confirmIdx, setConfirmIdx] = useState(null);
 
   const [form, setForm] = useState({
-    trade: "",
-    classYear: "",
+    selectedTrades: [],
+    customTrade: "",
+    showCustomTrade: false,
+    selectedClassYears: [],
     subject: "",
+    customSubject: "",
+    showCustomSubject: false,
     start: "09:00",
     end: "10:00",
     room: "",
@@ -101,15 +105,14 @@ export default function SchedulePage() {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
     if (formErrors[name]) setFormErrors((p) => ({ ...p, [name]: "" }));
-    // Reset classYear when trade changes
-    if (name === "trade")
-      setForm((p) => ({ ...p, trade: value, classYear: "" }));
   }
 
   function validateForm() {
     const errs = {};
-    if (!form.trade) errs.trade = "Select a trade";
-    if (!form.classYear) errs.classYear = "Select class year";
+    if (form.selectedTrades.length === 0)
+      errs.trade = "Select at least one department";
+    if (form.selectedClassYears.length === 0)
+      errs.classYear = "Select at least one class year";
     if (!form.subject) errs.subject = "Select a subject";
     if (!form.room.trim()) errs.room = "Enter room number";
     return errs;
@@ -128,13 +131,16 @@ export default function SchedulePage() {
     }
 
     try {
+      const tradeString = form.selectedTrades.join(" + ");
+      const classYearString = form.selectedClassYears.join(" + ");
+
       const res = await api.post("/teacher/timetable", {
         dayOfWeek: activeDow,
         startTime: form.start,
         endTime: form.end,
         subject: form.subject,
-        trade: form.trade,
-        classYear: form.classYear,
+        trade: tradeString,
+        classYear: classYearString,
         room: form.room,
       });
 
@@ -143,7 +149,7 @@ export default function SchedulePage() {
         start: fmtTime(form.start),
         end: fmtTime(form.end),
         sub: form.subject,
-        meta: `${form.classYear} — ${form.trade} · ${form.room}`,
+        meta: `${classYearString} — ${tradeString} · ${form.room}`,
       };
 
       const updated = [...(timetable[activeDow] || []), newEntry].sort(
@@ -158,9 +164,13 @@ export default function SchedulePage() {
 
       setTimetable((p) => ({ ...p, [activeDow]: updated }));
       setForm({
-        trade: "",
-        classYear: "",
+        selectedTrades: [],
+        customTrade: "",
+        showCustomTrade: false,
+        selectedClassYears: [],
         subject: "",
+        customSubject: "",
+        showCustomSubject: false,
         start: "09:00",
         end: "10:00",
         room: "",
@@ -389,7 +399,7 @@ export default function SchedulePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Trade */}
+              {/* Trade / Department - Multi Select */}
               <div>
                 <label
                   style={{
@@ -404,17 +414,91 @@ export default function SchedulePage() {
                 >
                   Trade / Department
                 </label>
+
+                {/* Selected chips */}
+                {form.selectedTrades.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {form.selectedTrades.map((trade) => (
+                      <div
+                        key={trade}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                          background: "#EFF6FF",
+                          border: "1px solid #BFDBFE",
+                          borderRadius: 20,
+                          padding: "4px 10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "#2563EB",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {trade}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((p) => ({
+                              ...p,
+                              selectedTrades: p.selectedTrades.filter(
+                                (t) => t !== trade,
+                              ),
+                            }))
+                          }
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "#2563EB",
+                            fontSize: 14,
+                            lineHeight: 1,
+                            padding: 0,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Dropdown */}
                 <div style={{ position: "relative" }}>
                   <select
-                    name="trade"
-                    value={form.trade}
-                    onChange={handleFormChange}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) return;
+                      if (val === "__other__") {
+                        setForm((p) => ({ ...p, showCustomTrade: true }));
+                      } else if (!form.selectedTrades.includes(val)) {
+                        setForm((p) => ({
+                          ...p,
+                          selectedTrades: [...p.selectedTrades, val],
+                        }));
+                      }
+                      e.target.value = "";
+                    }}
                     style={fieldStyle(formErrors.trade)}
                   >
-                    <option value="">Select Trade</option>
-                    {TRADES.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
+                    <option value="">+ Add Department</option>
+                    {TRADES.filter((t) => !form.selectedTrades.includes(t)).map(
+                      (t) => (
+                        <option key={t}>{t}</option>
+                      ),
+                    )}
+                    <option value="__other__">Other (type your own)</option>
                   </select>
                   <FiChevronDown
                     style={{
@@ -428,6 +512,64 @@ export default function SchedulePage() {
                     size={14}
                   />
                 </div>
+
+                {/* Custom trade input */}
+                {form.showCustomTrade && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <input
+                      placeholder="Type department name..."
+                      value={form.customTrade}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, customTrade: e.target.value }))
+                      }
+                      style={{
+                        flex: 1,
+                        height: 44,
+                        borderRadius: 10,
+                        border: "1.5px solid #E2E8F0",
+                        background: "#F8FAFC",
+                        fontSize: 13,
+                        color: "#0F172A",
+                        padding: "0 12px",
+                        outline: "none",
+                        fontFamily: "DM Sans, sans-serif",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          form.customTrade.trim() &&
+                          !form.selectedTrades.includes(form.customTrade.trim())
+                        ) {
+                          setForm((p) => ({
+                            ...p,
+                            selectedTrades: [
+                              ...p.selectedTrades,
+                              p.customTrade.trim(),
+                            ],
+                            customTrade: "",
+                            showCustomTrade: false,
+                          }));
+                        }
+                      }}
+                      style={{
+                        height: 44,
+                        padding: "0 14px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: "#2563EB",
+                        color: "white",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+
                 {formErrors.trade && (
                   <p
                     style={{
@@ -441,7 +583,7 @@ export default function SchedulePage() {
                 )}
               </div>
 
-              {/* Class Year */}
+              {/* Class Year - Multi Select */}
               <div>
                 <label
                   style={{
@@ -456,23 +598,88 @@ export default function SchedulePage() {
                 >
                   Class Year
                 </label>
+
+                {/* Selected chips */}
+                {form.selectedClassYears.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {form.selectedClassYears.map((year) => (
+                      <div
+                        key={year}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                          background: "#EFF6FF",
+                          border: "1px solid #BFDBFE",
+                          borderRadius: 20,
+                          padding: "4px 10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "#2563EB",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {year}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((p) => ({
+                              ...p,
+                              selectedClassYears: p.selectedClassYears.filter(
+                                (y) => y !== year,
+                              ),
+                            }))
+                          }
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "#2563EB",
+                            fontSize: 14,
+                            lineHeight: 1,
+                            padding: 0,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Dropdown */}
                 <div style={{ position: "relative" }}>
                   <select
-                    name="classYear"
-                    value={form.classYear}
-                    onChange={handleFormChange}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) return;
+                      if (!form.selectedClassYears.includes(val)) {
+                        setForm((p) => ({
+                          ...p,
+                          selectedClassYears: [...p.selectedClassYears, val],
+                        }));
+                      }
+                      e.target.value = "";
+                    }}
                     style={fieldStyle(formErrors.classYear)}
-                    disabled={!form.trade}
                   >
-                    <option value="">
-                      {form.trade ? "Select Class Year" : "Select Trade first"}
-                    </option>
-                    {form.trade &&
-                      CLASS_YEARS.map((y) => (
-                        <option key={y}>
-                          {y} — {form.trade}
-                        </option>
-                      ))}
+                    <option value="">+ Add Class Year</option>
+                    {CLASS_YEARS.filter(
+                      (y) => !form.selectedClassYears.includes(y),
+                    ).map((y) => (
+                      <option key={y}>{y}</option>
+                    ))}
                   </select>
                   <FiChevronDown
                     style={{
@@ -486,6 +693,7 @@ export default function SchedulePage() {
                     size={14}
                   />
                 </div>
+
                 {formErrors.classYear && (
                   <p
                     style={{
@@ -499,7 +707,7 @@ export default function SchedulePage() {
                 )}
               </div>
 
-              {/* Subject */}
+              {/* Subject - With custom option */}
               <div>
                 <label
                   style={{
@@ -518,13 +726,32 @@ export default function SchedulePage() {
                   <select
                     name="subject"
                     value={form.subject}
-                    onChange={handleFormChange}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__other__") {
+                        setForm((p) => ({
+                          ...p,
+                          showCustomSubject: true,
+                          subject: "",
+                        }));
+                      } else {
+                        setForm((p) => ({
+                          ...p,
+                          subject: val,
+                          showCustomSubject: false,
+                          customSubject: "",
+                        }));
+                      }
+                      if (formErrors.subject)
+                        setFormErrors((p) => ({ ...p, subject: "" }));
+                    }}
                     style={fieldStyle(formErrors.subject)}
                   >
                     <option value="">Select Subject</option>
                     {SUBJECTS.map((s) => (
                       <option key={s}>{s}</option>
                     ))}
+                    <option value="__other__">Other (type your own)</option>
                   </select>
                   <FiChevronDown
                     style={{
@@ -538,6 +765,61 @@ export default function SchedulePage() {
                     size={14}
                   />
                 </div>
+
+                {/* Custom subject input */}
+                {form.showCustomSubject && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <input
+                      placeholder="Type subject name..."
+                      value={form.customSubject}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          customSubject: e.target.value,
+                        }))
+                      }
+                      style={{
+                        flex: 1,
+                        height: 44,
+                        borderRadius: 10,
+                        border: "1.5px solid #E2E8F0",
+                        background: "#F8FAFC",
+                        fontSize: 13,
+                        color: "#0F172A",
+                        padding: "0 12px",
+                        outline: "none",
+                        fontFamily: "DM Sans, sans-serif",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (form.customSubject.trim()) {
+                          setForm((p) => ({
+                            ...p,
+                            subject: p.customSubject.trim(),
+                            customSubject: "",
+                            showCustomSubject: false,
+                          }));
+                        }
+                      }}
+                      style={{
+                        height: 44,
+                        padding: "0 14px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: "#2563EB",
+                        color: "white",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+
                 {formErrors.subject && (
                   <p
                     style={{
@@ -756,19 +1038,46 @@ export default function SchedulePage() {
                   </div>
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
+                    <div
                       style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: isConfirming ? "#EF4444" : "#0F172A",
-                        margin: "0 0 2px",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 2,
                       }}
                     >
-                      {cls.sub}
-                    </p>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: isConfirming ? "#EF4444" : "#0F172A",
+                          margin: 0,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {cls.sub}
+                      </p>
+                      {/* Combined class badge */}
+                      {cls.meta?.includes("+") && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "2px 7px",
+                            borderRadius: 20,
+                            background: "#F5F3FF",
+                            color: "#7C3AED",
+                            border: "1px solid #DDD6FE",
+                            flexShrink: 0,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          COMBINED
+                        </span>
+                      )}
+                    </div>
                     <p
                       style={{
                         fontSize: 11.5,
