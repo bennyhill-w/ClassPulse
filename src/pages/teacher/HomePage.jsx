@@ -651,19 +651,46 @@ export default function HomePage() {
                 </p>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p
+                <div
                   style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: "#0F172A",
-                    margin: "0 0 2px",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginBottom: 2,
                   }}
                 >
-                  {cls.sub}
-                </p>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "#0F172A",
+                      margin: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {cls.sub}
+                  </p>
+                  {/* Combined class badge */}
+                  {cls.meta?.includes("+") && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: "2px 7px",
+                        borderRadius: 20,
+                        background: "#F5F3FF",
+                        color: "#7C3AED",
+                        border: "1px solid #DDD6FE",
+                        flexShrink: 0,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      COMBINED
+                    </span>
+                  )}
+                </div>
                 <p
                   style={{
                     fontSize: 11.5,
