@@ -19,6 +19,7 @@ import StaffHomePage from "./pages/teacher/StaffHomePage";
 // ── ADMIN PAGES ──────────────────────────────────────────────────
 import AdminApp from "./pages/admin/AdminApp";
 import OverviewPage from "./pages/admin/OverviewPage";
+import PinsPage from "./pages/admin/PinsPage";
 import LiveMonitorPage from "./pages/admin/LiveMonitorPage";
 import TeachersPage from "./pages/admin/TeachersPage";
 import ActiveClassesPage from "./pages/admin/ActiveClassesPage";
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="alerts" element={<AlertsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="pins" element={<PinsPage />} />
         </Route>
 
         {/* ── FALLBACK ───────────────────────────────────────── */}

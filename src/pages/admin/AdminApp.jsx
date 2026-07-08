@@ -13,6 +13,7 @@ import {
   MdLogout,
   MdMenu,
   MdClose,
+  MdPin,
 } from "react-icons/md";
 import { FiClock } from "react-icons/fi";
 import useAuthStore from "../../store/authStore";
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { path: "/admin/analytics", icon: MdBarChart, label: "Analytics" },
   { path: "/admin/alerts", icon: MdWarning, label: "Alerts" },
   { path: "/admin/settings", icon: MdSettings, label: "Settings" },
+  { path: "/admin/pins", icon: MdPin, label: "Class PINs" },
 ];
 
 const PAGE_TITLES = {
@@ -53,6 +55,10 @@ const PAGE_TITLES = {
   "/admin/analytics": { title: "Analytics", subtitle: "Performance insights" },
   "/admin/alerts": { title: "Alerts", subtitle: "Issues requiring attention" },
   "/admin/settings": { title: "Settings", subtitle: "System configuration" },
+  "/admin/pins": {
+    title: "Class PINs",
+    subtitle: "Daily classroom verification codes",
+  },
 };
 
 export default function AdminApp() {

@@ -8,6 +8,7 @@ import {
   FiPlay,
   FiCheck,
 } from "react-icons/fi";
+import { useState } from "react";
 import useAuthStore from "../../store/authStore";
 import api from "../../services/api";
 import Toast from "../../components/ui/Toast";
@@ -20,6 +21,12 @@ export default function HomePage() {
   const [time, setTime] = useState(timeStr());
   const [date, setDate] = useState(shortDate());
   const [toast, setToast] = useState(null);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinModalType, setPinModalType] = useState("start"); // 'start' | 'end'
+  const [pinValue, setPinValue] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [pendingIdx, setPendingIdx] = useState(null);
+  const [pinLoading, setPinLoading] = useState(false);
   const [checkedOut, setCheckedOut] = useState(false);
   const [checkOutTime, setCheckOutTime] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
@@ -105,14 +112,37 @@ export default function HomePage() {
   }, []);
 
   // Start / End class
-  async function toggleClass(idx) {
-    const cls = todayClasses[idx];
+  function toggleClass(idx) {
     const state = classStates[idx] || "idle";
-
     if (state === "done") return;
 
+    setPendingIdx(idx);
+    setPinValue("");
+    setPinError("");
+
     if (state === "idle") {
-      try {
+      setPinModalType("start");
+      setShowPinModal(true);
+    } else if (state === "active") {
+      setPinModalType("end");
+      setShowPinModal(true);
+    }
+  }
+
+  async function submitPin() {
+    if (!pinValue.trim() || pinValue.length < 4) {
+      setPinError("Please enter the 4-digit PIN");
+      return;
+    }
+
+    setPinLoading(true);
+    setPinError("");
+
+    const cls = todayClasses[pendingIdx];
+    const state = classStates[pendingIdx] || "idle";
+
+    try {
+      if (state === "idle") {
         const metaParts = cls.meta.split("—");
         const classYear = metaParts[0]?.trim() || "Tech 1";
         const tradeRoom = metaParts[1]?.split("·") || [];
@@ -124,39 +154,40 @@ export default function HomePage() {
           trade,
           classYear,
           room,
+          pin: pinValue,
         });
         const sessionId = res.data.data.session.id;
         setClassStates((prev) => ({
           ...prev,
-          [idx]: "active",
-          [`${idx}_sessionId`]: sessionId,
+          [pendingIdx]: "active",
+          [`${pendingIdx}_sessionId`]: sessionId,
         }));
         setToast({
           message: `✅ ${cls.sub} started! Admin notified.`,
           type: "success",
         });
-      } catch (err) {
-        const message = err.response?.data?.message || "Failed to start class";
-        setToast({ message, type: "error" });
-      }
-    } else if (state === "active") {
-      const sessionId = classStates[`${idx}_sessionId`];
-      if (!sessionId) {
-        setToast({ message: "Session not found. Try again.", type: "error" });
-        return;
-      }
-      try {
-        const res = await api.post("/teacher/class/end", { sessionId });
+      } else if (state === "active") {
+        const sessionId = classStates[`${pendingIdx}_sessionId`];
+        const res = await api.post("/teacher/class/end", {
+          sessionId,
+          pin: pinValue,
+        });
         const { durationMins } = res.data.data;
-        setClassStates((prev) => ({ ...prev, [idx]: "done" }));
+        setClassStates((prev) => ({ ...prev, [pendingIdx]: "done" }));
         setToast({
-          message: `Class ended — ${durationMins} minute${durationMins !== 1 ? "s" : ""}`,
+          message: `Class ended — ${durationMins} min${durationMins !== 1 ? "s" : ""}`,
           type: "success",
         });
-      } catch (err) {
-        const message = err.response?.data?.message || "Failed to end class";
-        setToast({ message, type: "error" });
       }
+
+      setShowPinModal(false);
+      setPinValue("");
+      setPendingIdx(null);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Invalid PIN. Try again.";
+      setPinError(msg);
+    } finally {
+      setPinLoading(false);
     }
   }
 
@@ -1121,6 +1152,192 @@ export default function HomePage() {
                 fontSize: 14,
                 color: "#94A3B8",
                 cursor: "pointer",
+                fontFamily: "DM Sans, sans-serif",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── PIN MODAL ──────────────────────────────────────────── */}
+      {showPinModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            zIndex: 60,
+            backdropFilter: "blur(6px)",
+          }}
+          onClick={() => setShowPinModal(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              background: "white",
+              borderRadius: "28px 28px 0 0",
+              padding: "28px 24px 44px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                background: "#E2E8F0",
+                borderRadius: 4,
+                margin: "0 auto 24px",
+              }}
+            />
+
+            {/* Icon */}
+            <div
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                background: pinModalType === "start" ? "#ECFDF5" : "#FEF2F2",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <span style={{ fontSize: 28 }}>
+                {pinModalType === "start" ? "▶" : "⏹"}
+              </span>
+            </div>
+
+            <h3
+              style={{
+                fontFamily: "Sora, sans-serif",
+                fontSize: 19,
+                fontWeight: 800,
+                color: "#0F172A",
+                textAlign: "center",
+                margin: "0 0 6px",
+              }}
+            >
+              {pinModalType === "start" ? "Start Class PIN" : "End Class PIN"}
+            </h3>
+            <p
+              style={{
+                fontSize: 13,
+                color: "#64748B",
+                textAlign: "center",
+                margin: "0 0 24px",
+                lineHeight: 1.6,
+              }}
+            >
+              {pinModalType === "start"
+                ? "Ask your class captain for today's Start PIN for this room"
+                : "Ask your class captain for today's End PIN for this room"}
+            </p>
+
+            {/* PIN input */}
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.8px",
+                  color: "#64748B",
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                Enter 4-Digit PIN
+              </label>
+              <input
+                type="number"
+                maxLength={4}
+                value={pinValue}
+                onChange={(e) => {
+                  setPinValue(e.target.value.slice(0, 4));
+                  setPinError("");
+                }}
+                placeholder="····"
+                autoFocus
+                style={{
+                  width: "100%",
+                  height: 64,
+                  borderRadius: 16,
+                  border: `2px solid ${pinError ? "#EF4444" : pinValue.length === 4 ? "#10B981" : "#E2E8F0"}`,
+                  background: "#F8FAFC",
+                  fontSize: 32,
+                  color: "#0F172A",
+                  textAlign: "center",
+                  outline: "none",
+                  fontFamily: "Sora, sans-serif",
+                  fontWeight: 800,
+                  letterSpacing: 12,
+                  boxSizing: "border-box",
+                  transition: "border 0.2s",
+                }}
+              />
+              {pinError && (
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "#EF4444",
+                    fontWeight: 600,
+                    margin: "6px 0 0",
+                    textAlign: "center",
+                  }}
+                >
+                  {pinError}
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={submitPin}
+              disabled={pinLoading || pinValue.length < 4}
+              style={{
+                width: "100%",
+                height: 54,
+                borderRadius: 14,
+                border: "none",
+                background:
+                  pinValue.length < 4
+                    ? "#E2E8F0"
+                    : pinModalType === "start"
+                      ? "linear-gradient(135deg, #10B981, #059669)"
+                      : "linear-gradient(135deg, #EF4444, #DC2626)",
+                color: pinValue.length < 4 ? "#94A3B8" : "white",
+                fontSize: 15,
+                fontWeight: 700,
+                cursor:
+                  pinLoading || pinValue.length < 4 ? "not-allowed" : "pointer",
+                fontFamily: "DM Sans, sans-serif",
+                transition: "all 0.2s",
+              }}
+            >
+              {pinLoading
+                ? "Verifying..."
+                : pinModalType === "start"
+                  ? "Start Class"
+                  : "End Class"}
+            </button>
+
+            <button
+              onClick={() => setShowPinModal(false)}
+              style={{
+                width: "100%",
+                height: 44,
+                background: "transparent",
+                border: "none",
+                fontSize: 13,
+                color: "#94A3B8",
+                cursor: "pointer",
+                marginTop: 8,
                 fontFamily: "DM Sans, sans-serif",
               }}
             >
