@@ -22,6 +22,19 @@ export default function PinsPage() {
     }
   }
 
+  async function generatePins() {
+    try {
+      setLoading(true);
+      const res = await api.post("/admin/pins/generate");
+      setPins(res.data.data.pins);
+      setLastUpdate(res.data.data.date);
+    } catch (err) {
+      console.error("Generate error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadPins();
   }, []);
@@ -96,7 +109,7 @@ export default function PinsPage() {
             {copied === "all" ? "Copied!" : "Copy All"}
           </button>
           <button
-            onClick={loadPins}
+            onClick={generatePins}
             style={{
               display: "flex",
               alignItems: "center",
@@ -113,7 +126,7 @@ export default function PinsPage() {
               fontFamily: "DM Sans, sans-serif",
             }}
           >
-            <FiRefreshCw size={14} /> Refresh
+            <FiRefreshCw size={14} /> Regenerate
           </button>
         </div>
       </div>
@@ -201,7 +214,7 @@ export default function PinsPage() {
             first.
           </p>
           <button
-            onClick={loadPins}
+            onClick={generatePins}
             style={{
               height: 42,
               padding: "0 24px",
@@ -215,7 +228,7 @@ export default function PinsPage() {
               fontFamily: "DM Sans, sans-serif",
             }}
           >
-            Generate Now
+            Generate PINs Now
           </button>
         </div>
       ) : (
