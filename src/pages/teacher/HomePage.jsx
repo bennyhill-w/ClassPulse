@@ -8,7 +8,6 @@ import {
   FiPlay,
   FiCheck,
 } from "react-icons/fi";
-import { useState } from "react";
 import useAuthStore from "../../store/authStore";
 import api from "../../services/api";
 import Toast from "../../components/ui/Toast";
