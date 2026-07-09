@@ -11,12 +11,13 @@ import {
   FiX,
   FiShield,
   FiBook,
+  FiPhone,
+  FiUser,
 } from "react-icons/fi";
 import { MdQrCode } from "react-icons/md";
 import useAuthStore from "../../store/authStore";
 import Toast from "../../components/ui/Toast";
 import api from "../../services/api";
-import { displayName, initials } from "../../utils/helpers";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -26,19 +27,75 @@ export default function ProfilePage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [stats, setStats] = useState({ totalClasses: 0, totalSessions: 0 });
+  const [pwLoading, setPwLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+
   const [editForm, setEditForm] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    trade: "",
+    subjects: "",
+    title: "",
   });
+
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
   const [pwError, setPwError] = useState("");
-  const [stats, setStats] = useState({ totalClasses: 0, daysPresent: 0 });
 
-  const name = displayName(user) || "Teacher";
-  const initls = initials(user) || "TC";
+  // Sync editForm with real user data when modal opens
+  useEffect(() => {
+    if (showEdit && user) {
+      setEditForm({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        trade: user.trade || "",
+        subjects: user.subjects || "",
+        title: user.title || "Mr.",
+      });
+    }
+  }, [showEdit, user]);
 
-  // Gradient colors based on initials
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await api.get("/teacher/class/history?filter=month");
+        setStats({
+          totalClasses: res.data.data.summary?.totalDone || 0,
+          totalSessions: res.data.data.summary?.totalSessions || 0,
+        });
+      } catch {}
+    }
+    loadStats();
+  }, []);
+
+  // Load fresh profile from backend on mount
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await api.get("/teacher/profile");
+        if (res.data.data.user) {
+          updateUser(res.data.data.user);
+        }
+      } catch {}
+    }
+    loadProfile();
+  }, []);
+
+  function handleLogout() {
+    logout();
+    navigate("/", { replace: true });
+  }
+
+  const name = user
+    ? `${user.title || ""} ${user.firstName || ""} ${user.lastName || ""}`.trim()
+    : "Teacher";
+  const initls = user
+    ? `${(user.firstName || "T")[0]}${(user.lastName || "C")[0]}`.toUpperCase()
+    : "TC";
   const colors = [
     "#2563EB",
     "#7C3AED",
@@ -52,36 +109,24 @@ export default function ProfilePage() {
       (initls.charCodeAt(0) + (initls.charCodeAt(1) || 0)) % colors.length
     ];
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const res = await api.get("/teacher/class/history?filter=month");
-        setStats({
-          totalClasses: res.data.data.summary?.totalDone || 0,
-          daysPresent: res.data.data.summary?.totalSessions || 0,
-        });
-      } catch {}
-    }
-    loadStats();
-  }, []);
-
-  function handleLogout() {
-    logout();
-    navigate("/", { replace: true });
-  }
-
   async function saveEdit() {
     if (!editForm.firstName.trim() || !editForm.lastName.trim()) {
       setToast({ message: "Name fields cannot be empty", type: "error" });
       return;
     }
+    setEditLoading(true);
     try {
-      await api.patch("/teacher/profile", editForm);
-      updateUser({ ...user, ...editForm });
+      const res = await api.patch("/teacher/profile", editForm);
+      updateUser({ ...user, ...res.data.data.user });
       setShowEdit(false);
       setToast({ message: "Profile updated successfully", type: "success" });
-    } catch {
-      setToast({ message: "Failed to update profile", type: "error" });
+    } catch (err) {
+      setToast({
+        message: err.response?.data?.message || "Failed to update profile",
+        type: "error",
+      });
+    } finally {
+      setEditLoading(false);
     }
   }
 
@@ -98,10 +143,21 @@ export default function ProfilePage() {
       setPwError("Passwords do not match");
       return;
     }
-    setPwForm({ current: "", newPw: "", confirm: "" });
+    setPwLoading(true);
     setPwError("");
-    setShowPw(false);
-    setToast({ message: "Password changed successfully", type: "success" });
+    try {
+      await api.patch("/auth/change-password", {
+        currentPassword: pwForm.current,
+        newPassword: pwForm.newPw,
+      });
+      setPwForm({ current: "", newPw: "", confirm: "" });
+      setShowPw(false);
+      setToast({ message: "Password changed successfully", type: "success" });
+    } catch (err) {
+      setPwError(err.response?.data?.message || "Failed to change password");
+    } finally {
+      setPwLoading(false);
+    }
   }
 
   const inp = {
@@ -128,7 +184,7 @@ export default function ProfilePage() {
         background: "#F1F5F9",
       }}
     >
-      {/* ── HERO HEADER ────────────────────────────────────────── */}
+      {/* ── HERO ─────────────────────────────────────────────── */}
       <div
         style={{
           background: "linear-gradient(135deg, #1E40AF, #2563EB)",
@@ -138,7 +194,6 @@ export default function ProfilePage() {
           overflow: "hidden",
         }}
       >
-        {/* Bg shapes */}
         <div
           style={{
             position: "absolute",
@@ -171,7 +226,6 @@ export default function ProfilePage() {
             position: "relative",
           }}
         >
-          {/* Avatar */}
           <div
             style={{
               width: 80,
@@ -207,17 +261,25 @@ export default function ProfilePage() {
             style={{
               color: "rgba(255,255,255,0.65)",
               fontSize: 13,
+              margin: "0 0 4px",
+            }}
+          >
+            {user?.staffId || "—"}
+          </p>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              fontSize: 12,
               margin: "0 0 16px",
             }}
           >
-            {user?.staffId} · {user?.trade || "G.T.C Agidingbi"}
+            {user?.trade || "Trade not set — tap Edit Profile"}
           </p>
 
-          {/* Quick stats */}
           <div style={{ display: "flex", gap: 16 }}>
             {[
               { val: stats.totalClasses, label: "Classes" },
-              { val: stats.daysPresent, label: "Sessions" },
+              { val: stats.totalSessions, label: "Sessions" },
             ].map((s) => (
               <div
                 key={s.label}
@@ -255,7 +317,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── SCROLLABLE CONTENT ─────────────────────────────────── */}
+      {/* ── CONTENT ──────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 32px" }}>
         {/* Info card */}
         <div
@@ -280,11 +342,21 @@ export default function ProfilePage() {
               value: user?.email || "—",
             },
             {
+              icon: <FiPhone size={15} />,
+              label: "Phone",
+              value: user?.phone || "Not set",
+            },
+            {
               icon: <FiBook size={15} />,
               label: "Trade",
-              value: user?.trade || "Not set",
+              value: user?.trade || "Not set — edit profile to add",
             },
-          ].map((row, i) => (
+            {
+              icon: <FiUser size={15} />,
+              label: "Subjects",
+              value: user?.subjects || "Not set — edit profile to add",
+            },
+          ].map((row, i, arr) => (
             <div
               key={i}
               style={{
@@ -292,7 +364,7 @@ export default function ProfilePage() {
                 alignItems: "center",
                 gap: 12,
                 padding: "14px 16px",
-                borderBottom: i < 2 ? "1px solid #F8FAFC" : "none",
+                borderBottom: i < arr.length - 1 ? "1px solid #F8FAFC" : "none",
               }}
             >
               <div
@@ -310,7 +382,7 @@ export default function ProfilePage() {
               >
                 {row.icon}
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
                     fontSize: 10.5,
@@ -325,10 +397,15 @@ export default function ProfilePage() {
                 </p>
                 <p
                   style={{
-                    fontSize: 14,
-                    color: "#0F172A",
+                    fontSize: 13,
+                    color: row.value.includes("Not set")
+                      ? "#94A3B8"
+                      : "#0F172A",
                     fontWeight: 600,
                     margin: 0,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {row.value}
@@ -360,13 +437,14 @@ export default function ProfilePage() {
                 margin: 0,
               }}
             >
-              Account
+              Account Settings
             </p>
           </div>
           {[
             {
               icon: <FiEdit2 size={15} />,
               label: "Edit Profile",
+              sub: "Update your name, trade and contact",
               action: () => setShowEdit(true),
               color: "#2563EB",
               bg: "#EFF6FF",
@@ -374,6 +452,7 @@ export default function ProfilePage() {
             {
               icon: <MdQrCode size={15} />,
               label: "My QR Code",
+              sub: "Your personal identification code",
               action: () => setShowQr(true),
               color: "#7C3AED",
               bg: "#F5F3FF",
@@ -381,6 +460,7 @@ export default function ProfilePage() {
             {
               icon: <FiLock size={15} />,
               label: "Change Password",
+              sub: "Update your login password",
               action: () => setShowPw(true),
               color: "#059669",
               bg: "#ECFDF5",
@@ -388,16 +468,24 @@ export default function ProfilePage() {
             {
               icon: <FiBell size={15} />,
               label: "Notification Prefs",
+              sub: "Push notification settings",
               action: () =>
-                setToast({ message: "Coming soon", type: "default" }),
+                setToast({
+                  message: "Notification settings coming in next update",
+                  type: "default",
+                }),
               color: "#F59E0B",
               bg: "#FEF3C7",
             },
             {
               icon: <FiShield size={15} />,
               label: "Privacy & Security",
+              sub: "Data and security settings",
               action: () =>
-                setToast({ message: "Coming soon", type: "default" }),
+                setToast({
+                  message: "Privacy settings coming in next update",
+                  type: "default",
+                }),
               color: "#64748B",
               bg: "#F1F5F9",
             },
@@ -433,17 +521,24 @@ export default function ProfilePage() {
               >
                 {item.icon}
               </div>
-              <span
-                style={{
-                  flex: 1,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#0F172A",
-                  fontFamily: "DM Sans, sans-serif",
-                }}
-              >
-                {item.label}
-              </span>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#0F172A",
+                    margin: 0,
+                    fontFamily: "DM Sans, sans-serif",
+                  }}
+                >
+                  {item.label}
+                </p>
+                <p
+                  style={{ fontSize: 11, color: "#94A3B8", margin: "1px 0 0" }}
+                >
+                  {item.sub}
+                </p>
+              </div>
               <FiChevronRight size={15} color="#CBD5E1" />
             </button>
           ))}
@@ -458,22 +553,16 @@ export default function ProfilePage() {
             border: "1px solid #E2E8F0",
             padding: "14px 16px",
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            display: "flex",
+            justifyContent: "space-between",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
-              Classpulse v1.0
-            </p>
-            <p style={{ fontSize: 13, color: "#94A3B8", margin: 0 }}>
-              G.T.C Agidingbi
-            </p>
-          </div>
+          <p style={{ fontSize: 12, color: "#64748B", margin: 0 }}>
+            Classpulse v1.0
+          </p>
+          <p style={{ fontSize: 12, color: "#94A3B8", margin: 0 }}>
+            G.T.C Agidingbi, Lagos
+          </p>
         </div>
 
         {/* Logout */}
@@ -500,7 +589,7 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* ── EDIT MODAL ─────────────────────────────────────────── */}
+      {/* ── EDIT PROFILE MODAL ─────────────────────────────── */}
       {showEdit && (
         <div
           style={{
@@ -521,7 +610,9 @@ export default function ProfilePage() {
               maxWidth: 480,
               background: "white",
               borderRadius: "28px 28px 0 0",
-              padding: "28px 24px 40px",
+              padding: "28px 24px 44px",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -566,6 +657,33 @@ export default function ProfilePage() {
               </button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Title */}
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.8px",
+                    color: "#64748B",
+                    display: "block",
+                    marginBottom: 6,
+                  }}
+                >
+                  Title
+                </label>
+                <select
+                  value={editForm.title}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, title: e.target.value }))
+                  }
+                  style={{ ...inp, appearance: "none" }}
+                >
+                  {["Mr.", "Mrs.", "Ms.", "Dr.", "Prof."].map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
               {[
                 {
                   label: "First Name",
@@ -578,6 +696,21 @@ export default function ProfilePage() {
                   placeholder: "Last name",
                 },
                 { label: "Email", key: "email", placeholder: "Email address" },
+                {
+                  label: "Phone Number",
+                  key: "phone",
+                  placeholder: "e.g. 080-XXXX-XXXX",
+                },
+                {
+                  label: "Trade / Department",
+                  key: "trade",
+                  placeholder: "e.g. Computer Crafts",
+                },
+                {
+                  label: "Subjects Taught",
+                  key: "subjects",
+                  placeholder: "e.g. ICT, Mathematics",
+                },
               ].map((f) => (
                 <div key={f.key}>
                   <label
@@ -605,28 +738,31 @@ export default function ProfilePage() {
               ))}
               <button
                 onClick={saveEdit}
+                disabled={editLoading}
                 style={{
                   width: "100%",
                   height: 50,
                   borderRadius: 14,
                   border: "none",
-                  background: "linear-gradient(135deg, #2563EB, #1E40AF)",
+                  background: editLoading
+                    ? "#93C5FD"
+                    : "linear-gradient(135deg, #2563EB, #1E40AF)",
                   color: "white",
                   fontSize: 14,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: editLoading ? "not-allowed" : "pointer",
                   marginTop: 4,
                   fontFamily: "DM Sans, sans-serif",
                 }}
               >
-                Save Changes
+                {editLoading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── CHANGE PASSWORD MODAL ──────────────────────────────── */}
+      {/* ── CHANGE PASSWORD MODAL ─────────────────────────── */}
       {showPw && (
         <div
           style={{
@@ -647,7 +783,7 @@ export default function ProfilePage() {
               maxWidth: 480,
               background: "white",
               borderRadius: "28px 28px 0 0",
-              padding: "28px 24px 40px",
+              padding: "28px 24px 44px",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -696,19 +832,16 @@ export default function ProfilePage() {
                 {
                   label: "Current Password",
                   key: "current",
-                  type: "password",
                   placeholder: "Enter current password",
                 },
                 {
                   label: "New Password",
                   key: "newPw",
-                  type: "password",
                   placeholder: "Minimum 6 characters",
                 },
                 {
                   label: "Confirm Password",
                   key: "confirm",
-                  type: "password",
                   placeholder: "Repeat new password",
                 },
               ].map((f) => (
@@ -727,7 +860,7 @@ export default function ProfilePage() {
                     {f.label}
                   </label>
                   <input
-                    type={f.type}
+                    type="password"
                     value={pwForm[f.key]}
                     onChange={(e) => {
                       setPwForm((p) => ({ ...p, [f.key]: e.target.value }));
@@ -752,28 +885,31 @@ export default function ProfilePage() {
               )}
               <button
                 onClick={savePw}
+                disabled={pwLoading}
                 style={{
                   width: "100%",
                   height: 50,
                   borderRadius: 14,
                   border: "none",
-                  background: "linear-gradient(135deg, #2563EB, #1E40AF)",
+                  background: pwLoading
+                    ? "#93C5FD"
+                    : "linear-gradient(135deg, #2563EB, #1E40AF)",
                   color: "white",
                   fontSize: 14,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: pwLoading ? "not-allowed" : "pointer",
                   marginTop: 4,
                   fontFamily: "DM Sans, sans-serif",
                 }}
               >
-                Save Password
+                {pwLoading ? "Changing..." : "Change Password"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── QR MODAL ───────────────────────────────────────────── */}
+      {/* ── QR MODAL ─────────────────────────────────────────── */}
       {showQr && (
         <div
           style={{
@@ -830,9 +966,9 @@ export default function ProfilePage() {
               <svg viewBox="0 0 100 100" width="130" height="130">
                 {[0, 1, 2, 3, 4, 5, 6].map((r) =>
                   [0, 1, 2, 3, 4, 5, 6].map((c) => {
-                    const inTL = r < 3 && c < 3;
-                    const inTR = r < 3 && c > 3;
-                    const inBL = r > 3 && c < 3;
+                    const inTL = r < 3 && c < 3,
+                      inTR = r < 3 && c > 3,
+                      inBL = r > 3 && c < 3;
                     const fill =
                       inTL || inTR || inBL
                         ? "#1E40AF"
@@ -857,10 +993,10 @@ export default function ProfilePage() {
             <p
               style={{
                 fontFamily: "Sora, sans-serif",
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: 700,
                 color: "#0F172A",
-                margin: "0 0 4px",
+                margin: "0 0 3px",
               }}
             >
               {name}
