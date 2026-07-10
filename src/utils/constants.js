@@ -1,35 +1,59 @@
 // ── TRADES ───────────────────────────────────────────────────────
 export const TRADES = [
+  "Electrical Installation and Maintenance",
+  "Draughtsmanship Craft Practice",
+  // Add more as Mr. Raheem sends them
   "Computer Crafts",
-  "Electrical Installation",
   "Electronic Works",
   "Refrigeration & Air Conditioning",
-  "Instrument Mechanic Works",
-  "Furniture Crafts",
-  "Draughtsmanship Crafts",
   "Garment Making",
   "Leather Trade",
   "Graphic Arts",
   "Secretarial Duties",
   "Bookkeeping",
+  "Furniture Crafts",
 ];
 
 // ── SUBJECTS ─────────────────────────────────────────────────────
 export const SUBJECTS = [
-  "English Language",
+  // Electrical Installation
+  "Domestic Electrical Installation",
+  "Electrical Electronics Drawing",
+  "Workshop Practice",
+  "Solid State Devices and Circuits",
+  "Cable Technology and Cable Jointing",
+  "Fundamental Renewable Energy and Thermal Technology",
+  "Battery Technology and BMS",
+  "Solar PV Components and Electrical Connections",
+  "Solar PV System Design, Sizing and Installation",
+  "Industrial Installation and Power Systems",
+  "Electrical Machines and Windings",
+  "Power Electronics and Inverter Circuitry",
+  "Solar PV Operations, Routine Maintenance and Applications",
+  "Entrepreneurship and Professional Practice",
+
+  // Draughtsmanship
+  "Draughtsmanship Craft Practice",
+  "Introduction to Building Construction",
+  "General Wood Work",
+  "General Metal Work",
+  "Engineering/Building Drawing",
+
+  // General subjects
   "Mathematics",
+  "English Language",
   "Physics",
   "Chemistry",
   "Biology",
   "Economics",
+  "Entrepreneurship",
+  "Information Communication Technology",
   "Technical Drawing",
-  "ICT",
-  "Intro to Computer",
   "AutoCAD",
-  "Computer Hardware",
-  "Computer Electronics",
-  "Basic Programming",
   "Basic Electricity",
+  "Computer Hardware",
+  "Basic Programming",
+  "Computer Electronics",
 ];
 
 // ── CLASS YEARS ──────────────────────────────────────────────────
