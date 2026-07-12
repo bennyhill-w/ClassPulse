@@ -16,30 +16,6 @@ export const TRADES = [
 
 // ── SUBJECTS ─────────────────────────────────────────────────────
 export const SUBJECTS = [
-  // Electrical Installation
-  "Domestic Electrical Installation",
-  "Electrical Electronics Drawing",
-  "Workshop Practice",
-  "Solid State Devices and Circuits",
-  "Cable Technology and Cable Jointing",
-  "Fundamental Renewable Energy and Thermal Technology",
-  "Battery Technology and BMS",
-  "Solar PV Components and Electrical Connections",
-  "Solar PV System Design, Sizing and Installation",
-  "Industrial Installation and Power Systems",
-  "Electrical Machines and Windings",
-  "Power Electronics and Inverter Circuitry",
-  "Solar PV Operations, Routine Maintenance and Applications",
-  "Entrepreneurship and Professional Practice",
-
-  // Draughtsmanship
-  "Draughtsmanship Craft Practice",
-  "Introduction to Building Construction",
-  "General Wood Work",
-  "General Metal Work",
-  "Engineering/Building Drawing",
-
-  // General subjects
   "Mathematics",
   "English Language",
   "Physics",
@@ -49,11 +25,8 @@ export const SUBJECTS = [
   "Entrepreneurship",
   "Information Communication Technology",
   "Technical Drawing",
-  "AutoCAD",
-  "Basic Electricity",
-  "Computer Hardware",
-  "Basic Programming",
-  "Computer Electronics",
+  "Workshop Practice",
+  "Engineering Drawing",
 ];
 
 // ── CLASS YEARS ──────────────────────────────────────────────────
