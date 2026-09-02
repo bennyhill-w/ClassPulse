@@ -64,6 +64,17 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
+  async function openNotifications() {
+    setShowNotifs((p) => !p);
+    if (!showNotifs && unreadCount > 0) {
+      try {
+        await api.patch("/teacher/notifications/read-all");
+        setUnreadCount(0);
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      } catch {}
+    }
+  }
+
   useEffect(() => {
     async function loadTodayData() {
       try {
@@ -307,7 +318,7 @@ export default function HomePage() {
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button
-              onClick={() => setShowNotifs((p) => !p)}
+              onClick={() => openNotifications()}
               style={{
                 width: 38,
                 height: 38,
